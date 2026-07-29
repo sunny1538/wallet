@@ -1,0 +1,1033 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nivesa — Admin Panel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+/* ============================================================
+   Nivesa Admin — single-file scaffold
+   Design tokens match the customer-facing demo (usdt-exchange-demo.html)
+   so both surfaces feel like one product. This file is frontend only:
+   wired live to Supabase — auth, RLS, and the RPC functions in supabase-setup.sql.
+   ============================================================ */
+:root{
+  --ink:#0A101D;
+  --surface:#111A2C;
+  --surface-2:#16223A;
+  --line:#233250;
+  --line-soft:#1B2740;
+  --text:#E8ECF6;
+  --text-dim:#8B96B4;
+  --text-faint:#5C6885;
+  --tether:#19B980;
+  --tether-dim:#0F7A54;
+  --tether-bg:rgba(25,185,128,0.10);
+  --gold:#D9A94A;
+  --gold-bg:rgba(217,169,74,0.10);
+  --red:#E5555C;
+  --red-bg:rgba(229,85,92,0.10);
+  --font-display:'Space Grotesk',sans-serif;
+  --font-body:'IBM Plex Sans',sans-serif;
+  --font-mono:'IBM Plex Mono',monospace;
+  --radius:10px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{
+  background:var(--ink);color:var(--text);font-family:var(--font-body);
+  font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;
+}
+::selection{background:var(--tether-dim);color:#fff;}
+a{color:inherit;text-decoration:none;}
+button{font-family:inherit;cursor:pointer;}
+input,select,textarea{font-family:inherit;}
+:focus-visible{outline:2px solid var(--tether-dim);outline-offset:2px;}
+
+#envBanner{
+  background:linear-gradient(90deg,#1B2740,#182642);border-bottom:1px solid var(--line);
+  color:var(--gold);font-family:var(--font-mono);font-size:11.5px;letter-spacing:0.02em;
+  padding:7px 18px;text-align:center;position:sticky;top:0;z-index:200;
+}
+#envBanner b{color:var(--text);}
+
+/* ---------- Auth / login screen ---------- */
+#authScreen{
+  min-height:calc(100vh - 34px);display:flex;align-items:center;justify-content:center;padding:40px 20px;
+  background:
+    radial-gradient(ellipse 700px 400px at 15% 0%, rgba(25,185,128,0.09), transparent 60%),
+    radial-gradient(ellipse 700px 400px at 85% 100%, rgba(217,169,74,0.07), transparent 60%);
+}
+.authCard{width:100%;max-width:400px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:36px 32px 30px;}
+.brandRow{display:flex;align-items:center;gap:10px;margin-bottom:28px;}
+.brandMark{
+  width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--tether),var(--tether-dim));
+  display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:700;color:#04140D;font-size:16px;flex-shrink:0;
+}
+.brandName{font-family:var(--font-display);font-weight:600;font-size:18px;letter-spacing:0.01em;}
+.brandSub{color:var(--text-faint);font-size:11px;font-family:var(--font-mono);}
+
+.field{margin-bottom:14px;}
+.field label{display:block;font-size:12px;color:var(--text-dim);margin-bottom:6px;}
+.field input,.field select,.field textarea{
+  width:100%;background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:10px 12px;
+  color:var(--text);font-size:13.5px;outline:none;transition:.15s;
+}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--tether-dim);background:var(--ink);}
+.field .hint{font-size:11px;color:var(--text-faint);margin-top:5px;}
+.field .err{font-size:11px;color:var(--red);margin-top:5px;display:none;}
+.field.hasErr input{border-color:var(--red);}
+.field.hasErr .err{display:block;}
+
+.btnPrimary{
+  background:var(--tether);color:#04140D;border:none;padding:11px 18px;border-radius:8px;font-weight:600;font-size:14px;
+  transition:.15s;display:inline-flex;align-items:center;justify-content:center;gap:8px;
+}
+.btnPrimary.block{width:100%;margin-top:6px;}
+.btnPrimary:hover{background:#1FCB8F;}
+.btnPrimary:disabled{opacity:.5;cursor:not-allowed;}
+.authFoot{margin-top:18px;text-align:center;font-size:11.5px;color:var(--text-faint);}
+
+/* ---------- App shell ---------- */
+#app{display:none;}
+.shell{display:flex;min-height:calc(100vh - 34px);}
+.sidebar{
+  width:220px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--line);
+  padding:18px 12px;display:flex;flex-direction:column;position:sticky;top:34px;height:calc(100vh - 34px);z-index:100;
+}
+.sideBrand{display:flex;align-items:center;gap:9px;padding:6px 8px 18px;}
+.sideBrand .brandMark{width:28px;height:28px;font-size:13px;}
+.sideBrand .brandName{font-size:15px;}
+.navGroup{margin-bottom:6px;}
+.navLabel{font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-faint);padding:14px 10px 6px;}
+.navItem{
+  display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;color:var(--text-dim);
+  font-size:13.5px;font-weight:500;margin-bottom:2px;border:none;background:transparent;width:100%;text-align:left;
+}
+.navItem:hover{background:var(--surface-2);color:var(--text);}
+.navItem.active{background:var(--tether-bg);color:var(--tether);}
+.navIcon{width:16px;height:16px;flex-shrink:0;opacity:0.9;}
+.sideFoot{margin-top:auto;padding-top:14px;border-top:1px solid var(--line-soft);}
+.adminBox{display:flex;align-items:center;gap:9px;background:var(--surface-2);border:1px solid var(--line);border-radius:9px;padding:9px;margin-bottom:8px;}
+.adminBox .avatar{width:28px;height:28px;flex-shrink:0;}
+.adminBox .aname{font-size:12.5px;font-weight:500;}
+.adminBox .arole{font-size:10.5px;color:var(--text-faint);}
+.logoutBtn{width:100%;text-align:left;color:var(--text-faint);font-size:11.5px;background:none;border:none;padding:7px 6px;display:flex;align-items:center;gap:8px;}
+.logoutBtn:hover{color:var(--red);}
+.navToggle{display:none;background:var(--surface);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:8px 10px;}
+
+.main{flex:1;min-width:0;padding:26px 34px 60px;}
+.pageHead{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:22px;flex-wrap:wrap;gap:12px;}
+.pageTitle{font-family:var(--font-display);font-size:22px;font-weight:600;}
+.pageSub{color:var(--text-dim);font-size:13px;margin-top:4px;}
+
+.cardGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-bottom:26px;}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px 20px;}
+.card .clabel{font-size:11.5px;color:var(--text-dim);display:flex;align-items:center;justify-content:space-between;}
+.card .cval{font-family:var(--font-display);font-size:25px;font-weight:600;margin-top:10px;}
+.card .csub{font-size:11.5px;color:var(--text-faint);margin-top:6px;}
+.pill{font-size:10px;padding:2px 8px;border-radius:20px;font-weight:600;letter-spacing:.02em;display:inline-block;}
+.pill.green{background:var(--tether-bg);color:var(--tether);}
+.pill.gold{background:var(--gold-bg);color:var(--gold);}
+.pill.red{background:var(--red-bg);color:var(--red);}
+.pill.gray{background:var(--surface-2);color:var(--text-dim);}
+
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;margin-bottom:22px;overflow:hidden;}
+.panelHead{padding:16px 20px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;}
+.panelHead h3{font-size:14.5px;font-weight:600;}
+.panelHead .sub{font-size:11.5px;color:var(--text-faint);margin-top:2px;}
+.panelBody{padding:20px;}
+.panelBody.flush{padding:0;}
+
+.filterBar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;align-items:center;}
+.filterBar input[type="search"],.filterBar input[type="text"],.filterBar select{
+  background:var(--surface-2);border:1px solid var(--line);border-radius:8px;color:var(--text);
+  padding:9px 12px;font-size:12.5px;outline:none;
+}
+.filterBar input:focus,.filterBar select:focus{border-color:var(--tether-dim);}
+.filterBar input[type="search"]{min-width:220px;flex:1;}
+
+table{width:100%;border-collapse:collapse;font-size:12.5px;}
+th{text-align:left;padding:10px 14px;color:var(--text-faint);font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--line);white-space:nowrap;}
+td{padding:12px 14px;border-bottom:1px solid var(--line-soft);color:var(--text);}
+tr:last-child td{border-bottom:none;}
+tbody tr:hover td{background:var(--surface-2);}
+.mono{font-family:var(--font-mono);font-size:12px;color:var(--text-dim);}
+.emptyRow{padding:44px 20px;text-align:center;color:var(--text-faint);font-size:12.5px;}
+.emptyRow .emptyTitle{color:var(--text-dim);font-size:13.5px;font-weight:500;margin-bottom:4px;}
+.tableFoot{display:flex;justify-content:space-between;align-items:center;padding:12px 20px;border-top:1px solid var(--line);font-size:11.5px;color:var(--text-faint);}
+.pager{display:flex;gap:6px;}
+.pager button{background:var(--surface-2);border:1px solid var(--line);color:var(--text-dim);border-radius:6px;padding:5px 10px;font-size:11.5px;}
+.pager button:hover{color:var(--text);border-color:var(--text-faint);}
+.pager button:disabled{opacity:.4;cursor:not-allowed;}
+
+.formGrid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.formGrid.single{grid-template-columns:1fr;max-width:420px;}
+.warnBox{background:var(--gold-bg);border:1px solid rgba(217,169,74,0.3);border-radius:8px;padding:10px 14px;font-size:11.5px;color:var(--gold);margin-bottom:16px;line-height:1.5;}
+.infoBox{background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:10px 14px;font-size:11.5px;color:var(--text-dim);margin-bottom:16px;line-height:1.5;}
+
+.btnRow{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap;}
+.btnGhost{background:transparent;border:1px solid var(--line);color:var(--text-dim);padding:9px 16px;border-radius:8px;font-size:13px;font-weight:500;}
+.btnGhost:hover{border-color:var(--text-faint);color:var(--text);}
+.btnMini{padding:6px 12px;border-radius:6px;font-size:11.5px;font-weight:600;border:none;}
+.btnMini.approve{background:var(--tether-bg);color:var(--tether);border:1px solid rgba(25,185,128,.3);}
+.btnMini.approve:hover{background:var(--tether);color:#04140D;}
+.btnMini.reject{background:var(--red-bg);color:var(--red);border:1px solid rgba(229,85,92,.3);margin-left:6px;}
+.btnMini.reject:hover{background:var(--red);color:#fff;}
+
+.toggleRow{display:flex;background:var(--surface-2);border:1px solid var(--line);border-radius:9px;padding:3px;width:fit-content;margin-bottom:18px;}
+.toggleRow button{padding:8px 18px;border-radius:7px;border:none;background:transparent;color:var(--text-dim);font-size:12.5px;font-weight:500;}
+.toggleRow button.active{background:var(--line-soft);color:var(--text);}
+
+.modalBg{display:none;position:fixed;inset:0;background:rgba(6,10,18,0.7);z-index:300;align-items:center;justify-content:center;padding:20px;}
+.modalBg.show{display:flex;}
+.modalCard{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:26px;width:100%;max-width:420px;}
+.modalCard h3{font-size:15px;margin-bottom:16px;}
+.toast{
+  position:fixed;bottom:22px;right:22px;background:var(--surface);border:1px solid var(--tether-dim);border-left:3px solid var(--tether);
+  color:var(--text);padding:13px 18px;border-radius:9px;font-size:13px;z-index:400;box-shadow:0 8px 30px rgba(0,0,0,0.4);display:none;max-width:320px;
+}
+.toast.show{display:block;animation:toastIn .2s ease-out;}
+.toast.err{border-color:var(--red);border-left-color:var(--red);}
+@keyframes toastIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+
+.skeleton{background:linear-gradient(90deg,var(--surface-2) 0%,var(--line-soft) 50%,var(--surface-2) 100%);background-size:200% 100%;animation:shimmer 1.4s ease-in-out infinite;border-radius:6px;}
+@keyframes shimmer{0%{background-position:200% 0;}100%{background-position:-200% 0;}}
+
+@media(max-width:900px){
+  .shell{flex-direction:column;}
+  .sidebar{width:100%;height:auto;position:relative;top:0;flex-direction:row;align-items:center;overflow-x:auto;padding:10px 12px;gap:10px;}
+  .sideBrand,.sideFoot,.navLabel{display:none;}
+  .navGroup{display:flex;gap:4px;margin-bottom:0;}
+  .navToggle{display:inline-flex;}
+  .main{padding:20px 16px 40px;}
+  .formGrid{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<div id="envBanner">● <b>LIVE</b> — connected to Supabase. Single admin account, all changes apply and sync in real time.</div>
+
+<!-- ================= LOGIN SCREEN ================= -->
+<div id="authScreen">
+  <div class="authCard">
+    <div class="brandRow">
+      <div class="brandMark">N</div>
+      <div><div class="brandName">Nivesa</div><div class="brandSub">ADMIN CONSOLE</div></div>
+    </div>
+    <form id="loginForm" novalidate>
+      <div class="field" id="fld_email">
+        <label>Email</label>
+        <input id="li_email" type="email" placeholder="admin@nivesa.com" autocomplete="username">
+        <div class="err">Enter a valid email address.</div>
+      </div>
+      <div class="field" id="fld_pass">
+        <label>Password</label>
+        <input id="li_pass" type="password" placeholder="••••••••" autocomplete="current-password">
+        <div class="err">Enter your password.</div>
+      </div>
+      <button class="btnPrimary block" id="loginBtn" type="submit">Log in</button>
+    </form>
+    <div class="authFoot">Access is restricted to authorized Nivesa staff.</div>
+  </div>
+</div>
+
+<!-- ================= APP SHELL ================= -->
+<div id="app">
+  <div class="shell">
+    <div class="sidebar" id="sidebar"></div>
+    <div class="main">
+      <div class="pageHead">
+        <div>
+          <button class="navToggle" id="navToggle" aria-label="Toggle navigation">☰</button>
+          <div class="pageTitle" id="pageTitle">—</div>
+          <div class="pageSub" id="pageSub"></div>
+        </div>
+      </div>
+      <div id="pageContent"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   Nivesa Admin — single-file scaffold logic
+   No fake data / no business logic here beyond page wiring.
+   >>> BACKEND WIRE-UP POINTS ARE MARKED WITH: 
+   ============================================================ */
+
+/* ============================================================
+   Supabase client
+   Fill these in from Project Settings -> API in your Supabase dashboard.
+   Only the anon/public key belongs here — never the service_role key.
+   ============================================================ */
+const SUPABASE_URL = 'https://tfgowfihuuacfqlmmkxe.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_I2akurqlHbLEF3ElLiXZnw_LxEDcAct';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let sessionAdmin = null; // { id, name, email, role }
+let realtimeChannel = null;
+
+/* ---------------- Nav config ---------------- */
+const NAV_SECTIONS = [
+  { label:'Overview', items:[
+    { key:'dashboard', label:'Dashboard', icon:'grid', title:'Dashboard', sub:'Live snapshot of platform activity' },
+  ]},
+  { label:'Orders', items:[
+    { key:'buy-orders', label:'Buy orders', icon:'arrowDown', title:'Buy orders', sub:'Customers paid INR, waiting on USDT credit' },
+    { key:'sell-orders', label:'Sell orders', icon:'arrowUp', title:'Sell orders', sub:'Customers sent USDT, waiting on INR payout' },
+    { key:'deposits', label:'Deposits', icon:'inbox', title:'Deposits', sub:'Incoming USDT deposits detected on-chain' },
+    { key:'withdrawals', label:'Withdrawals', icon:'send', title:'Withdrawals', sub:'Outgoing USDT withdrawal requests' },
+  ]},
+  { label:'Platform', items:[
+    { key:'users', label:'Users', icon:'users', title:'Users', sub:'All registered customers' },
+    { key:'rates', label:'Rates', icon:'trend', title:'Rates', sub:'Control the buy/sell USDT⇄INR rate shown to customers' },
+    { key:'settings', label:'Settings', icon:'gear', title:'Settings', sub:'Deposit addresses, limits and fees' },
+    { key:'audit-log', label:'Audit log', icon:'clock', title:'Audit log', sub:'Every action taken by admins on the platform' },
+  ]},
+];
+const FLAT_PAGES = NAV_SECTIONS.flatMap(s => s.items);
+
+const ICONS = {
+  grid:'<svg class="navIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/></svg>',
+  arrowDown:'<svg class="navIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 4v16M6 14l6 6 6-6"/></svg>',
+  arrowUp:'<svg class="navIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20V4M6 10l6-6 6 6"/></svg>',
+  inbox:'<svg class="navIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 12h4l2 3h4l2-3h4"/><path d="M4 12l1.5-6.5A2 2 0 0 1 7.4 4h9.2a2 2 0 0 1 1.9 1.5L20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-6z"/></svg>',
+  send:'<svg class="navIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7z"/></svg>',
+  users:'<svg class="navIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+  trend:'<svg class="navIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M23 6 13.5 15.5l-5-5L1 18"/><path d="M17 6h6v6"/></svg>',
+  gear:'<svg class="navIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',
+  clock:'<svg class="navIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>',
+  logout:'<svg class="navIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>',
+};
+
+let currentPage = 'dashboard';
+
+/* ---------------- Auth ---------------- */
+document.getElementById('loginForm').addEventListener('submit', async function(e){
+  e.preventDefault();
+  const emailField = document.getElementById('fld_email');
+  const passField = document.getElementById('fld_pass');
+  const email = document.getElementById('li_email').value.trim();
+  const pass = document.getElementById('li_pass').value;
+
+  emailField.classList.toggle('hasErr', !/^\S+@\S+\.\S+$/.test(email));
+  passField.classList.toggle('hasErr', pass.length === 0);
+  if(emailField.classList.contains('hasErr') || passField.classList.contains('hasErr')) return;
+
+  const btn = document.getElementById('loginBtn');
+  btn.disabled = true; btn.textContent = 'Logging in…';
+  try{
+    await AdminAPI.login(email, pass);
+    enterApp();
+  }catch(err){
+    showToast(err.message || 'Login failed.', true);
+  }finally{
+    btn.disabled = false; btn.textContent = 'Log in';
+  }
+});
+
+async function enterApp(){
+  document.getElementById('authScreen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  renderSidebar();
+  goToPage('dashboard');
+  setupRealtime();
+}
+
+async function doLogout(){
+  await sb.auth.signOut();
+  teardownRealtime();
+  sessionAdmin = null;
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('authScreen').style.display = 'flex';
+  document.getElementById('li_email').value = '';
+  document.getElementById('li_pass').value = '';
+}
+
+/* ---------------- Sidebar / navigation ---------------- */
+function getSessionAdmin(){
+  return sessionAdmin || { name:'Admin', role:'Administrator' };
+}
+
+/* ---------------- Restore session on page load ---------------- */
+async function restoreSession(){
+  const { data } = await sb.auth.getSession();
+  if(!data.session) return;
+  const { data: profile, error } = await sb.from('profiles').select('*').eq('id', data.session.user.id).single();
+  if(error || !profile || !profile.is_admin){ await sb.auth.signOut(); return; }
+  sessionAdmin = { id: profile.id, name: profile.name, email: profile.email, role: 'Administrator' };
+  enterApp();
+}
+restoreSession();
+
+/* ---------------- Realtime: keep the open page in sync instantly ---------------- */
+const REALTIME_TABLES = ['deposits','withdrawals','buy_orders','sell_orders','profiles','platform_settings','audit_log'];
+function setupRealtime(){
+  if(realtimeChannel) return;
+  realtimeChannel = sb.channel('admin-live-updates');
+  REALTIME_TABLES.forEach(table => {
+    realtimeChannel.on('postgres_changes', { event:'*', schema:'public', table }, () => {
+      clearTimeout(realtimeChannel._debounce);
+      realtimeChannel._debounce = setTimeout(() => {
+        const meta = FLAT_PAGES.find(p => p.key === currentPage);
+        if(meta && RENDERERS[currentPage]) RENDERERS[currentPage]();
+      }, 250);
+    });
+  });
+  realtimeChannel.subscribe();
+}
+function teardownRealtime(){
+  if(realtimeChannel){ sb.removeChannel(realtimeChannel); realtimeChannel = null; }
+}
+
+function renderSidebar(){
+  const mount = document.getElementById('sidebar');
+  const admin = getSessionAdmin();
+  mount.innerHTML = `
+    <div class="sideBrand">
+      <div class="brandMark">N</div>
+      <div><div class="brandName">Nivesa</div><div class="brandSub" style="font-size:9.5px;">ADMIN</div></div>
+    </div>
+    ${NAV_SECTIONS.map(sec => `
+      <div class="navGroup">
+        <div class="navLabel">${sec.label}</div>
+        ${sec.items.map(it => `
+          <button class="navItem" data-page="${it.key}">${ICONS[it.icon]||''}<span>${it.label}</span></button>
+        `).join('')}
+      </div>
+    `).join('')}
+    <div class="sideFoot">
+      <div class="adminBox">
+        <div class="avatar" style="background:var(--gold-bg);color:var(--gold);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;font-family:var(--font-display);">${(admin.name||'A').slice(0,1).toUpperCase()}</div>
+        <div><div class="aname">${admin.name}</div><div class="arole">${admin.role}</div></div>
+      </div>
+      <button class="logoutBtn" onclick="doLogout()">${ICONS.logout} Log out</button>
+    </div>
+  `;
+  mount.querySelectorAll('.navItem').forEach(btn => {
+    btn.addEventListener('click', () => goToPage(btn.dataset.page));
+  });
+  const toggle = document.getElementById('navToggle');
+  toggle.onclick = () => mount.classList.toggle('mobileOpen');
+}
+
+function goToPage(key){
+  currentPage = key;
+  const meta = FLAT_PAGES.find(p => p.key === key);
+  document.getElementById('pageTitle').textContent = meta.title;
+  document.getElementById('pageSub').textContent = meta.sub;
+  document.querySelectorAll('.navItem').forEach(b => b.classList.toggle('active', b.dataset.page === key));
+  RENDERERS[key]();
+}
+
+/* ---------------- Small render helpers ---------------- */
+function showToast(msg, isErr){
+  let el = document.getElementById('toast');
+  if(!el){ el = document.createElement('div'); el.id='toast'; el.className='toast'; document.body.appendChild(el); }
+  el.textContent = msg;
+  el.className = 'toast show' + (isErr ? ' err' : '');
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove('show'), 3200);
+}
+function openModal(html){
+  let bg = document.getElementById('modalBg');
+  if(!bg){
+    bg = document.createElement('div'); bg.id='modalBg'; bg.className='modalBg';
+    bg.innerHTML = '<div class="modalCard" id="modalCard"></div>';
+    document.body.appendChild(bg);
+    bg.addEventListener('click', (e) => { if(e.target === bg) closeModal(); });
+  }
+  document.getElementById('modalCard').innerHTML = html;
+  bg.classList.add('show');
+}
+function closeModal(){ const bg = document.getElementById('modalBg'); if(bg) bg.classList.remove('show'); }
+
+function statusPill(status){
+  const map = { pending:'gold', paid:'green', credited:'green', approved:'green',
+    rejected:'red', failed:'red', flagged:'red', active:'green', suspended:'red', verified:'green', unverified:'gray' };
+  return `<span class="pill ${map[status]||'gray'}">${status}</span>`;
+}
+function emptyState(title, sub){ return `<div class="emptyRow"><div class="emptyTitle">${title}</div>${sub?`<div>${sub}</div>`:''}</div>`; }
+function tableSkeleton(cols, rows){
+  rows = rows || 5;
+  return Array.from({length:rows}).map(() =>
+    `<tr>${Array.from({length:cols}).map(() => `<td><div class="skeleton" style="height:14px;width:80%;"></div></td>`).join('')}</tr>`
+  ).join('');
+}
+
+/* ============================================================
+   API layer — every call this admin panel needs, as stubs.
+   Replace each body with a real fetch() to your backend.
+   ============================================================ */
+const PAGE_SIZE = 10;
+
+async function logAudit(action, target){
+  // Extra client-side audit rows for actions the RPCs don't already log
+  // (e.g. capturing a tx hash). Permitted by the audit_log_admin_all RLS policy.
+  if(!sessionAdmin) return;
+  await sb.from('audit_log').insert({ admin_id: sessionAdmin.id, action, target: target || null });
+}
+
+const AdminAPI = {
+  async login(email, password){
+    const { data, error } = await sb.auth.signInWithPassword({ email, password });
+    if(error) throw new Error('Invalid email or password.');
+    const { data: profile, error: pErr } = await sb.from('profiles').select('*').eq('id', data.user.id).single();
+    if(pErr || !profile){ await sb.auth.signOut(); throw new Error('No profile found for this account.'); }
+    if(!profile.is_admin){ await sb.auth.signOut(); throw new Error('This account does not have admin access.'); }
+    if(profile.is_banned){ await sb.auth.signOut(); throw new Error('This admin account has been suspended.'); }
+    sessionAdmin = { id: profile.id, name: profile.name, email: profile.email, role: 'Administrator' };
+  },
+
+  async getDashboardStats(){
+    const [users, pendingDep, pendingWd, pendingBuy, pendingSell] = await Promise.all([
+      sb.from('profiles').select('id', { count:'exact', head:true }).eq('is_admin', false),
+      sb.from('deposits').select('id', { count:'exact', head:true }).eq('status','pending'),
+      sb.from('withdrawals').select('id', { count:'exact', head:true }).eq('status','pending'),
+      sb.from('buy_orders').select('id', { count:'exact', head:true }).eq('status','pending'),
+      sb.from('sell_orders').select('id', { count:'exact', head:true }).eq('status','pending'),
+    ]);
+    const since = new Date(Date.now() - 24*60*60*1000).toISOString();
+    const [buyVol, sellVol] = await Promise.all([
+      sb.from('buy_orders').select('inr_amount').gte('created_at', since).neq('status','rejected'),
+      sb.from('sell_orders').select('inr_amount').gte('created_at', since).neq('status','rejected'),
+    ]);
+    const volume = (buyVol.data||[]).reduce((s,r)=>s+Number(r.inr_amount),0) + (sellVol.data||[]).reduce((s,r)=>s+Number(r.inr_amount),0);
+
+    const [dep, wd, buy, sell] = await Promise.all([
+      sb.from('deposits').select('*, profiles(name)').eq('status','pending').order('created_at',{ascending:false}).limit(5),
+      sb.from('withdrawals').select('*, profiles(name)').eq('status','pending').order('created_at',{ascending:false}).limit(5),
+      sb.from('buy_orders').select('*, profiles(name)').eq('status','pending').order('created_at',{ascending:false}).limit(5),
+      sb.from('sell_orders').select('*, profiles(name)').eq('status','pending').order('created_at',{ascending:false}).limit(5),
+    ]);
+    const attention = [
+      ...(dep.data||[]).map(d=>({label:`Deposit — ${d.profiles?.name||'user'} · ${d.amount} USDT`, sub:d.network, page:'deposits'})),
+      ...(wd.data||[]).map(w=>({label:`Withdrawal — ${w.profiles?.name||'user'} · ${w.amount} USDT`, sub:w.network, page:'withdrawals'})),
+      ...(buy.data||[]).map(b=>({label:`Buy order — ${b.profiles?.name||'user'} · ₹${b.inr_amount}`, sub:b.payment_method, page:'buy-orders'})),
+      ...(sell.data||[]).map(s=>({label:`Sell order — ${s.profiles?.name||'user'} · ${s.usdt_amount} USDT`, sub:s.payout_method, page:'sell-orders'})),
+    ];
+
+    return {
+      totalUsers: users.count||0,
+      pendingDeposits: pendingDep.count||0,
+      pendingWithdrawals: pendingWd.count||0,
+      pendingBuyOrders: pendingBuy.count||0,
+      pendingSellOrders: pendingSell.count||0,
+      volume24h: volume,
+      attention,
+    };
+  },
+
+  async listUsers(params){
+    let q = sb.from('profiles').select('*', { count:'exact' }).eq('is_admin', false);
+    if(params.query){ q = q.or(`name.ilike.%${params.query}%,email.ilike.%${params.query}%`); }
+    if(params.status === 'active') q = q.eq('is_banned', false);
+    if(params.status === 'suspended') q = q.eq('is_banned', true);
+    if(params.status === 'unverified') q = q.neq('kyc_status', 'verified');
+    const from = (params.page-1) * PAGE_SIZE, to = from + PAGE_SIZE - 1;
+    const { data, count, error } = await q.order('created_at',{ascending:false}).range(from, to);
+    if(error) throw new Error(error.message);
+    const rows = (data||[]).map(u => ({
+      id:u.id, name:u.name, email:u.email, usdt_balance:Number(u.usdt_balance).toFixed(4),
+      kyc_status:u.kyc_status, status:u.is_banned?'suspended':'active',
+      joined_at:new Date(u.created_at).toLocaleDateString('en-IN'),
+    }));
+    return { rows, total: count||0 };
+  },
+  async setUserStatus(id, status){
+    const { error } = await sb.from('profiles').update({ is_banned: status==='suspended' }).eq('id', id);
+    if(error) throw new Error(error.message);
+    await logAudit(`${status==='suspended'?'Suspended':'Reactivated'} user`, id);
+  },
+
+  async listDeposits(params){
+    let q = sb.from('deposits').select('*, profiles(name)');
+    if(params.status) q = q.eq('status', params.status);
+    const { data, error } = await q.order('created_at',{ascending:false}).limit(100);
+    if(error) throw new Error(error.message);
+    const rows = (data||[]).map(d => ({
+      id:d.id, user_name:d.profiles?.name||'—', network:d.network, amount:Number(d.amount).toFixed(4),
+      tx_hash:d.tx_hash, status:d.status, detected_at:new Date(d.created_at).toLocaleString('en-IN'),
+    }));
+    return { rows, total: rows.length };
+  },
+  async confirmDeposit(id){
+    const { error } = await sb.rpc('admin_verify_deposit', { p_deposit_id: id });
+    if(error) throw new Error(error.message);
+  },
+  async rejectDeposit(id){
+    const { error } = await sb.rpc('admin_reject_deposit', { p_deposit_id: id });
+    if(error) throw new Error(error.message);
+  },
+
+  async listWithdrawals(params){
+    let q = sb.from('withdrawals').select('*, profiles(name)');
+    if(params.status) q = q.eq('status', params.status);
+    const { data, error } = await q.order('created_at',{ascending:false}).limit(100);
+    if(error) throw new Error(error.message);
+    const rows = (data||[]).map(w => ({
+      id:w.id, user_name:w.profiles?.name||'—', network:w.network, amount:Number(w.amount).toFixed(4),
+      fee:Number(w.fee).toFixed(4), address:w.to_address, status:w.status==='completed'?'approved':w.status,
+      requested_at:new Date(w.created_at).toLocaleString('en-IN'),
+    }));
+    return { rows, total: rows.length };
+  },
+  async approveWithdrawal(id, txHash){
+    const { error } = await sb.rpc('admin_approve_withdrawal', { p_withdrawal_id: id });
+    if(error) throw new Error(error.message);
+    if(txHash) await logAudit(`Recorded withdrawal tx hash ${txHash}`, id);
+  },
+  async rejectWithdrawal(id){
+    const { error } = await sb.rpc('admin_reject_withdrawal', { p_withdrawal_id: id });
+    if(error) throw new Error(error.message);
+  },
+
+  async listBuyOrders(params){
+    const { data, error } = await sb.from('buy_orders').select('*, profiles(name)').order('created_at',{ascending:false}).limit(100);
+    if(error) throw new Error(error.message);
+    const rows = (data||[]).map(o => ({
+      id:o.id, user_name:o.profiles?.name||'—', inr_amount:Number(o.inr_amount).toFixed(2),
+      usdt_amount:Number(o.usdt_amount).toFixed(4), payment_method:o.payment_method,
+      payment_ref:o.payment_ref, status:o.status,
+    }));
+    return { rows, total: rows.length };
+  },
+  async verifyBuyOrder(id){
+    const { error } = await sb.rpc('admin_verify_buy_order', { p_order_id: id });
+    if(error) throw new Error(error.message);
+  },
+  async rejectBuyOrder(id){
+    const { error } = await sb.rpc('admin_reject_buy_order', { p_order_id: id });
+    if(error) throw new Error(error.message);
+  },
+
+  async listSellOrders(params){
+    const { data, error } = await sb.from('sell_orders').select('*, profiles(name)').order('created_at',{ascending:false}).limit(100);
+    if(error) throw new Error(error.message);
+    const rows = (data||[]).map(o => ({
+      id:o.id, user_name:o.profiles?.name||'—', usdt_amount:Number(o.usdt_amount).toFixed(4),
+      inr_amount:Number(o.inr_amount).toFixed(2),
+      payout_details: o.payout_details?.upi_id || o.payout_details?.account_number || JSON.stringify(o.payout_details||{}),
+      status:o.status,
+    }));
+    return { rows, total: rows.length };
+  },
+  async markSellPaid(id, utr){
+    const { error } = await sb.rpc('admin_confirm_sell_paid', { p_order_id: id, p_utr: utr });
+    if(error) throw new Error(error.message);
+  },
+  async rejectSellOrder(id){
+    const { error } = await sb.rpc('admin_reject_sell_order', { p_order_id: id });
+    if(error) throw new Error(error.message);
+  },
+
+  async getRateSettings(){
+    const { data, error } = await sb.from('platform_settings').select('*').eq('id',1).single();
+    if(error || !data) return null;
+    const buy = data.rate_mode==='live' ? +(data.live_rate*(1+data.margin_buy_pct/100)).toFixed(2) : data.manual_buy_rate;
+    const sell = data.rate_mode==='live' ? +(data.live_rate*(1-data.margin_sell_pct/100)).toFixed(2) : data.manual_sell_rate;
+    return {
+      live_rate:data.live_rate, buy, sell, rate_mode:data.rate_mode,
+      margin:{ buy:data.margin_buy_pct, sell:data.margin_sell_pct },
+      manual_rate:{ buy:data.manual_buy_rate, sell:data.manual_sell_rate },
+    };
+  },
+  async setRateMode(mode){
+    const { error } = await sb.from('platform_settings').update({ rate_mode: mode }).eq('id',1);
+    if(error) throw new Error(error.message);
+    await logAudit(`Switched rate mode to ${mode.toUpperCase()}`, 'settings');
+  },
+  async saveMargins(buy, sell){
+    const { error } = await sb.from('platform_settings').update({ margin_buy_pct: buy, margin_sell_pct: sell }).eq('id',1);
+    if(error) throw new Error(error.message);
+    await logAudit(`Updated margins — buy ${buy}% / sell ${sell}%`, 'settings');
+  },
+  async saveManualRates(buy, sell){
+    const { error } = await sb.from('platform_settings').update({ manual_buy_rate: buy, manual_sell_rate: sell }).eq('id',1);
+    if(error) throw new Error(error.message);
+    await logAudit(`Updated manual rates — buy ₹${buy} / sell ₹${sell}`, 'settings');
+  },
+
+  async getSettings(){
+    const [settingsRes, addrRes] = await Promise.all([
+      sb.from('platform_settings').select('*').eq('id',1).single(),
+      sb.from('deposit_addresses').select('*').order('network'),
+    ]);
+    if(settingsRes.error || !settingsRes.data) return null;
+    const s = settingsRes.data;
+    return {
+      min_deposit:s.min_deposit, min_withdrawal:s.min_withdrawal, withdrawal_fee_pct:s.withdrawal_fee_pct,
+      networks: (addrRes.data||[]).map(n => ({ code:n.network, name:n.name, addr:n.address })),
+    };
+  },
+  async saveSettings(payload){
+    const { error } = await sb.from('platform_settings').update({
+      min_deposit: payload.min_deposit, min_withdrawal: payload.min_withdrawal, withdrawal_fee_pct: payload.withdrawal_fee_pct,
+    }).eq('id',1);
+    if(error) throw new Error(error.message);
+    const addrInputs = document.querySelectorAll('#addressesBody input[data-network]');
+    for(const input of addrInputs){
+      await sb.from('deposit_addresses').update({ address: input.value.trim() }).eq('network', input.dataset.network);
+    }
+    await logAudit('Updated platform limits, fees and deposit addresses', 'settings');
+  },
+
+  async listAuditLog(params){
+    const { data, error } = await sb.from('audit_log').select('*, profiles(name)').order('created_at',{ascending:false}).limit(100);
+    if(error) throw new Error(error.message);
+    const rows = (data||[]).map(l => ({
+      admin: l.profiles?.name || 'Admin', action: l.action, time: new Date(l.created_at).toLocaleString('en-IN'),
+    }));
+    return { rows, total: rows.length };
+  },
+};
+
+/* ============================================================
+   Page renderers — one function per nav item, all mounting into #pageContent
+   ============================================================ */
+const RENDERERS = {
+
+  async dashboard(){
+    const el = document.getElementById('pageContent');
+    el.innerHTML = `
+      <div class="cardGrid" id="statCards">
+        ${['Total users','Pending deposits','Pending withdrawals','Pending buy orders','Pending sell orders','24h volume']
+          .map(l => `<div class="card"><div class="clabel">${l}</div><div class="cval"><div class="skeleton" style="height:25px;width:60px;"></div></div></div>`).join('')}
+      </div>
+      <div class="panel">
+        <div class="panelHead"><div><h3>Needs attention</h3><div class="sub">Items waiting on admin action across the platform</div></div></div>
+        <div class="panelBody" id="attentionBody"></div>
+      </div>
+    `;
+    const stats = await AdminAPI.getDashboardStats();
+    const cards = document.getElementById('statCards');
+    const body = document.getElementById('attentionBody');
+    if(!stats){
+      cards.innerHTML = ['Total users','Pending deposits','Pending withdrawals','Pending buy orders','Pending sell orders','24h volume']
+        .map(l => `<div class="card"><div class="clabel">${l}</div><div class="cval">—</div></div>`).join('');
+      body.innerHTML = emptyState('Nothing needs attention right now');
+      return;
+    }
+    cards.innerHTML = `
+      <div class="card"><div class="clabel">Total users</div><div class="cval">${stats.totalUsers}</div></div>
+      <div class="card"><div class="clabel">Pending deposits</div><div class="cval">${stats.pendingDeposits}</div></div>
+      <div class="card"><div class="clabel">Pending withdrawals</div><div class="cval">${stats.pendingWithdrawals}</div></div>
+      <div class="card"><div class="clabel">Pending buy orders</div><div class="cval">${stats.pendingBuyOrders}</div></div>
+      <div class="card"><div class="clabel">Pending sell orders</div><div class="cval">${stats.pendingSellOrders}</div></div>
+      <div class="card"><div class="clabel">24h volume</div><div class="cval">₹${Number(stats.volume24h).toLocaleString('en-IN')}</div></div>
+    `;
+    body.innerHTML = stats.attention.length ? stats.attention.map(a => `
+      <div class="filterBar" style="justify-content:space-between;margin-bottom:0;padding:10px 0;border-bottom:1px solid var(--line-soft);">
+        <div><div style="font-size:13px;">${a.label}</div><div class="csub">${a.sub||''}</div></div>
+        <button class="btnGhost" onclick="goToPage('${a.page}')">Review</button>
+      </div>
+    `).join('') : emptyState('Nothing needs attention right now');
+  },
+
+  async users(){
+    const el = document.getElementById('pageContent');
+    el.innerHTML = `
+      <div class="panel">
+        <div class="panelBody" style="padding-bottom:0;">
+          <div class="filterBar">
+            <input type="search" id="q" placeholder="Search name or email…">
+            <select id="statusFilter">
+              <option value="">All statuses</option>
+              <option value="active">Active</option>
+              <option value="suspended">Suspended</option>
+              <option value="unverified">Unverified KYC</option>
+            </select>
+            <button class="btnGhost" id="filterBtn">Filter</button>
+          </div>
+        </div>
+        <div class="panelBody flush">
+          <table><thead><tr><th>Name</th><th>Email</th><th>USDT balance</th><th>KYC</th><th>Status</th><th>Joined</th><th>Actions</th></tr></thead>
+          <tbody id="usersBody"></tbody></table>
+        </div>
+        <div class="tableFoot">
+          <span id="usersCount">—</span>
+          <div class="pager"><button id="prevPage">Prev</button><button id="nextPage">Next</button></div>
+        </div>
+      </div>
+    `;
+    let page = 1;
+    async function load(){
+      const body = document.getElementById('usersBody');
+      body.innerHTML = tableSkeleton(7, 5);
+      const { rows, total } = await AdminAPI.listUsers({
+        query: document.getElementById('q').value.trim(),
+        status: document.getElementById('statusFilter').value,
+        page,
+      });
+      document.getElementById('usersCount').textContent = total ? `${total} users` : 'Not connected';
+      document.getElementById('prevPage').disabled = page <= 1;
+      document.getElementById('nextPage').disabled = rows.length === 0;
+      if(!rows.length){
+        body.innerHTML = `<tr><td colspan="7">${emptyState('No users to show', 'Connect AdminAPI.listUsers() to your backend to see real customers here.')}</td></tr>`;
+        return;
+      }
+      body.innerHTML = rows.map(u => `
+        <tr><td>${u.name}</td><td class="mono">${u.email}</td><td>${u.usdt_balance}</td><td>${statusPill(u.kyc_status)}</td><td>${statusPill(u.status)}</td><td class="mono">${u.joined_at}</td>
+        <td>${u.status==='active' ? `<button class="btnMini reject" onclick="setUserStatus('${u.id}','suspended')">Suspend</button>` : `<button class="btnMini approve" onclick="setUserStatus('${u.id}','active')">Reactivate</button>`}</td></tr>
+      `).join('');
+    }
+    window.setUserStatus = async (id, status) => { await AdminAPI.setUserStatus(id, status); showToast(status==='active'?'User reactivated.':'User suspended.'); load(); };
+    document.getElementById('filterBtn').onclick = () => { page = 1; load(); };
+    document.getElementById('prevPage').onclick = () => { page = Math.max(1, page-1); load(); };
+    document.getElementById('nextPage').onclick = () => { page += 1; load(); };
+    load();
+  },
+
+  async deposits(){
+    const el = document.getElementById('pageContent');
+    el.innerHTML = `
+      <div class="toggleRow" id="statusToggle">
+        <button class="active" data-v="">All</button><button data-v="pending">Pending</button><button data-v="credited">Credited</button><button data-v="rejected">Rejected</button>
+      </div>
+      <div class="panel"><div class="panelBody flush">
+        <table><thead><tr><th>User</th><th>Network</th><th>Amount (USDT)</th><th>Tx hash</th><th>Status</th><th>Detected</th><th>Actions</th></tr></thead>
+        <tbody id="depositsBody"></tbody></table>
+      </div></div>
+    `;
+    let status = '';
+    async function load(){
+      const body = document.getElementById('depositsBody');
+      body.innerHTML = tableSkeleton(7, 5);
+      const { rows } = await AdminAPI.listDeposits({ status });
+      if(!rows.length){ body.innerHTML = `<tr><td colspan="7">${emptyState('No deposits to show', 'Connect AdminAPI.listDeposits() to see incoming on-chain deposits here.')}</td></tr>`; return; }
+      body.innerHTML = rows.map(d => `
+        <tr><td>${d.user_name}</td><td>${d.network}</td><td>${d.amount}</td><td class="mono">${d.tx_hash}</td><td>${statusPill(d.status)}</td><td class="mono">${d.detected_at}</td>
+        <td>${d.status==='pending' ? `<button class="btnMini approve" onclick="confirmDeposit('${d.id}')">Confirm & credit</button><button class="btnMini reject" onclick="rejectDeposit('${d.id}')">Reject</button>` : '—'}</td></tr>
+      `).join('');
+    }
+    window.confirmDeposit = async (id) => { await AdminAPI.confirmDeposit(id); showToast('Deposit confirmed and credited.'); load(); };
+    window.rejectDeposit = async (id) => { await AdminAPI.rejectDeposit(id); showToast('Deposit rejected.'); load(); };
+    document.getElementById('statusToggle').addEventListener('click', (e) => {
+      const btn = e.target.closest('button'); if(!btn) return;
+      document.querySelectorAll('#statusToggle button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active'); status = btn.dataset.v; load();
+    });
+    load();
+  },
+
+  async withdrawals(){
+    const el = document.getElementById('pageContent');
+    el.innerHTML = `
+      <div class="toggleRow" id="statusToggle">
+        <button class="active" data-v="">All</button><button data-v="pending">Pending</button><button data-v="approved">Approved</button><button data-v="rejected">Rejected</button>
+      </div>
+      <div class="panel"><div class="panelBody flush">
+        <table><thead><tr><th>User</th><th>Network</th><th>Amount</th><th>Fee</th><th>Destination address</th><th>Status</th><th>Requested</th><th>Actions</th></tr></thead>
+        <tbody id="wdBody"></tbody></table>
+      </div></div>
+    `;
+    let status = '';
+    async function load(){
+      const body = document.getElementById('wdBody');
+      body.innerHTML = tableSkeleton(8, 5);
+      const { rows } = await AdminAPI.listWithdrawals({ status });
+      if(!rows.length){ body.innerHTML = `<tr><td colspan="8">${emptyState('No withdrawals to show', 'Connect AdminAPI.listWithdrawals() to see requests here.')}</td></tr>`; return; }
+      body.innerHTML = rows.map(w => `
+        <tr><td>${w.user_name}</td><td>${w.network}</td><td>${w.amount}</td><td>${w.fee}</td><td class="mono">${w.address}</td><td>${statusPill(w.status)}</td><td class="mono">${w.requested_at}</td>
+        <td>${w.status==='pending' ? `<button class="btnMini approve" onclick="openApprove('${w.id}')">Approve</button><button class="btnMini reject" onclick="rejectWithdrawal('${w.id}')">Reject</button>` : '—'}</td></tr>
+      `).join('');
+    }
+    window.openApprove = (id) => {
+      openModal(`
+        <h3>Approve withdrawal</h3>
+        <div class="field"><label>Transaction hash</label><input id="txh" type="text" placeholder="0x…"></div>
+        <div class="btnRow"><button class="btnPrimary" onclick="approveWithdrawal('${id}')">Confirm approval</button><button class="btnGhost" onclick="closeModal()">Cancel</button></div>
+      `);
+    };
+    window.approveWithdrawal = async (id) => {
+      const tx = document.getElementById('txh').value.trim();
+      if(!tx){ showToast('Enter the transaction hash.', true); return; }
+      await AdminAPI.approveWithdrawal(id, tx); closeModal(); showToast('Withdrawal approved.'); load();
+    };
+    window.rejectWithdrawal = async (id) => { await AdminAPI.rejectWithdrawal(id); showToast('Withdrawal rejected, balance restored.'); load(); };
+    document.getElementById('statusToggle').addEventListener('click', (e) => {
+      const btn = e.target.closest('button'); if(!btn) return;
+      document.querySelectorAll('#statusToggle button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active'); status = btn.dataset.v; load();
+    });
+    load();
+  },
+
+  async 'buy-orders'(){
+    const el = document.getElementById('pageContent');
+    el.innerHTML = `
+      <div class="panel"><div class="panelBody flush">
+        <table><thead><tr><th>User</th><th>INR paid</th><th>USDT to credit</th><th>Method</th><th>Reference</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody id="buyBody"></tbody></table>
+      </div></div>
+    `;
+    async function load(){
+      const body = document.getElementById('buyBody');
+      body.innerHTML = tableSkeleton(7, 5);
+      const { rows } = await AdminAPI.listBuyOrders({});
+      if(!rows.length){ body.innerHTML = `<tr><td colspan="7">${emptyState('No buy orders to show', 'Connect AdminAPI.listBuyOrders() to see live orders here.')}</td></tr>`; return; }
+      body.innerHTML = rows.map(o => `
+        <tr><td>${o.user_name}</td><td>₹${o.inr_amount}</td><td>${o.usdt_amount}</td><td>${o.payment_method}</td><td class="mono">${o.payment_ref || '—'}</td><td>${statusPill(o.status)}</td>
+        <td>${o.status==='pending' ? `<button class="btnMini approve" onclick="verifyBuy('${o.id}')">Verify & credit</button><button class="btnMini reject" onclick="rejectBuy('${o.id}')">Reject</button>` : '—'}</td></tr>
+      `).join('');
+    }
+    window.verifyBuy = async (id) => { await AdminAPI.verifyBuyOrder(id); showToast('Payment verified, USDT credited.'); load(); };
+    window.rejectBuy = async (id) => { await AdminAPI.rejectBuyOrder(id); showToast('Buy order rejected.'); load(); };
+    load();
+  },
+
+  async 'sell-orders'(){
+    const el = document.getElementById('pageContent');
+    el.innerHTML = `
+      <div class="panel"><div class="panelBody flush">
+        <table><thead><tr><th>User</th><th>USDT sent</th><th>INR to pay</th><th>Bank / UPI</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody id="sellBody"></tbody></table>
+      </div></div>
+    `;
+    async function load(){
+      const body = document.getElementById('sellBody');
+      body.innerHTML = tableSkeleton(6, 5);
+      const { rows } = await AdminAPI.listSellOrders({});
+      if(!rows.length){ body.innerHTML = `<tr><td colspan="6">${emptyState('No sell orders to show', 'Connect AdminAPI.listSellOrders() to see live orders here.')}</td></tr>`; return; }
+      body.innerHTML = rows.map(o => `
+        <tr><td>${o.user_name}</td><td>${o.usdt_amount}</td><td>₹${o.inr_amount}</td><td class="mono">${o.payout_details}</td><td>${statusPill(o.status)}</td>
+        <td>${o.status==='pending' ? `<button class="btnMini approve" onclick="openPay('${o.id}')">Mark paid</button><button class="btnMini reject" onclick="rejectSell('${o.id}')">Reject</button>` : '—'}</td></tr>
+      `).join('');
+    }
+    window.openPay = (id) => {
+      openModal(`
+        <h3>Confirm payout</h3>
+        <div class="field"><label>UTR / reference number</label><input id="pay_utr" type="text" placeholder="e.g. 3298471029384"></div>
+        <div class="btnRow"><button class="btnPrimary" onclick="markPaid('${id}')">Mark as paid</button><button class="btnGhost" onclick="closeModal()">Cancel</button></div>
+      `);
+    };
+    window.markPaid = async (id) => {
+      const utr = document.getElementById('pay_utr').value.trim();
+      if(!utr){ showToast('Enter the UTR.', true); return; }
+      await AdminAPI.markSellPaid(id, utr); closeModal(); showToast('Sell order marked as paid.'); load();
+    };
+    window.rejectSell = async (id) => { await AdminAPI.rejectSellOrder(id); showToast('Sell order rejected, USDT refunded.'); load(); };
+    load();
+  },
+
+  async rates(){
+    const el = document.getElementById('pageContent');
+    el.innerHTML = `
+      <div class="toggleRow" id="modeToggle"><button class="active" data-v="live">Live / auto</button><button data-v="manual">Manual override</button></div>
+      <div class="cardGrid" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr));">
+        <div class="card"><div class="clabel">Reference rate</div><div class="cval" id="refRate">—</div><div class="csub">external feed</div></div>
+        <div class="card"><div class="clabel">Buy rate (live)</div><div class="cval" style="color:var(--gold);" id="buyRateLive">—</div></div>
+        <div class="card"><div class="clabel">Sell rate (live)</div><div class="cval" style="color:var(--tether);" id="sellRateLive">—</div></div>
+      </div>
+      <div class="panel"><div class="panelHead"><h3>Live mode — margin settings</h3></div>
+        <div class="panelBody">
+          <div class="formGrid">
+            <div class="field"><label>Buy margin above reference (%)</label><input id="margin_buy" type="number" step="0.1"></div>
+            <div class="field"><label>Sell margin below reference (%)</label><input id="margin_sell" type="number" step="0.1"></div>
+          </div>
+          <div class="btnRow"><button class="btnGhost" id="saveMargins">Save margins</button></div>
+        </div>
+      </div>
+      <div class="panel"><div class="panelHead"><h3>Manual mode — fixed rates</h3></div>
+        <div class="panelBody">
+          <div class="formGrid">
+            <div class="field"><label>Manual buy rate (₹/USDT)</label><input id="manual_buy" type="number" step="0.01"></div>
+            <div class="field"><label>Manual sell rate (₹/USDT)</label><input id="manual_sell" type="number" step="0.01"></div>
+          </div>
+          <div class="btnRow"><button class="btnGhost" id="saveManual">Save manual rates</button></div>
+        </div>
+      </div>
+    `;
+    let mode = 'live';
+    function updateFieldStates(){
+      document.getElementById('margin_buy').disabled = mode !== 'live';
+      document.getElementById('margin_sell').disabled = mode !== 'live';
+      document.getElementById('manual_buy').disabled = mode !== 'manual';
+      document.getElementById('manual_sell').disabled = mode !== 'manual';
+    }
+    document.getElementById('modeToggle').addEventListener('click', async (e) => {
+      const btn = e.target.closest('button'); if(!btn) return;
+      mode = btn.dataset.v;
+      document.querySelectorAll('#modeToggle button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      await AdminAPI.setRateMode(mode);
+      updateFieldStates();
+    });
+    document.getElementById('saveMargins').onclick = async () => {
+      const buy = parseFloat(document.getElementById('margin_buy').value) || 0;
+      const sell = parseFloat(document.getElementById('margin_sell').value) || 0;
+      await AdminAPI.saveMargins(buy, sell); showToast('Margins saved.');
+    };
+    document.getElementById('saveManual').onclick = async () => {
+      const buy = parseFloat(document.getElementById('manual_buy').value) || 0;
+      const sell = parseFloat(document.getElementById('manual_sell').value) || 0;
+      await AdminAPI.saveManualRates(buy, sell); showToast('Manual rates saved.');
+    };
+    const s = await AdminAPI.getRateSettings();
+    if(s){
+      document.getElementById('refRate').textContent = '₹' + s.live_rate;
+      document.getElementById('buyRateLive').textContent = '₹' + s.buy;
+      document.getElementById('sellRateLive').textContent = '₹' + s.sell;
+      document.getElementById('margin_buy').value = s.margin.buy;
+      document.getElementById('margin_sell').value = s.margin.sell;
+      document.getElementById('manual_buy').value = s.manual_rate.buy;
+      document.getElementById('manual_sell').value = s.manual_rate.sell;
+      mode = s.rate_mode;
+    }
+    updateFieldStates();
+  },
+
+  async settings(){
+    const el = document.getElementById('pageContent');
+    el.innerHTML = `
+      <div class="panel"><div class="panelHead"><div><h3>Deposit addresses</h3><div class="sub">Shown to every user, per network</div></div></div>
+        <div class="panelBody" id="addressesBody"></div>
+      </div>
+      <div class="panel"><div class="panelHead"><h3>Limits & fees</h3></div>
+        <div class="panelBody">
+          <div class="formGrid">
+            <div class="field"><label>Minimum deposit (USDT)</label><input id="set_mindep" type="number"></div>
+            <div class="field"><label>Minimum withdrawal (USDT)</label><input id="set_minwd" type="number"></div>
+            <div class="field"><label>Withdrawal fee (%)</label><input id="set_fee" type="number" step="0.1"></div>
+          </div>
+          <div class="btnRow"><button class="btnGhost" id="saveSettingsBtn">Save settings</button></div>
+        </div>
+      </div>
+      <div class="warnBox"><b>Compliance reminder:</b> confirm FIU-IND (VASP) registration and a working KYC provider are in place before processing real customer funds. This scaffold does not perform KYC or compliance checks.</div>
+    `;
+    document.getElementById('saveSettingsBtn').onclick = async () => {
+      const payload = {
+        min_deposit: parseFloat(document.getElementById('set_mindep').value) || 0,
+        min_withdrawal: parseFloat(document.getElementById('set_minwd').value) || 0,
+        withdrawal_fee_pct: parseFloat(document.getElementById('set_fee').value) || 0,
+      };
+      await AdminAPI.saveSettings(payload); showToast('Settings saved.');
+    };
+    const s = await AdminAPI.getSettings();
+    const addrBody = document.getElementById('addressesBody');
+    if(!s){ addrBody.innerHTML = emptyState('No settings loaded', 'Connect AdminAPI.getSettings() to manage deposit addresses here.'); return; }
+    document.getElementById('set_mindep').value = s.min_deposit;
+    document.getElementById('set_minwd').value = s.min_withdrawal;
+    document.getElementById('set_fee').value = s.withdrawal_fee_pct;
+    addrBody.innerHTML = s.networks.map(n => `<div class="field"><label>${n.code} — ${n.name}</label><input type="text" value="${n.addr}" data-network="${n.code}"></div>`).join('');
+  },
+
+  async 'audit-log'(){
+    const el = document.getElementById('pageContent');
+    el.innerHTML = `<div class="panel"><div class="panelBody flush">
+      <table><thead><tr><th>Admin</th><th>Action</th><th>Time</th></tr></thead><tbody id="auditBody"></tbody></table>
+    </div></div>`;
+    const body = document.getElementById('auditBody');
+    body.innerHTML = tableSkeleton(3, 6);
+    const { rows } = await AdminAPI.listAuditLog({});
+    if(!rows.length){ body.innerHTML = `<tr><td colspan="3">${emptyState('No actions logged yet', 'Connect AdminAPI.listAuditLog() to see the admin activity trail here.')}</td></tr>`; return; }
+    body.innerHTML = rows.map(l => `<tr><td>${l.admin}</td><td>${l.action}</td><td class="mono">${l.time}</td></tr>`).join('');
+  },
+};
+</script>
+</body>
+</html>
