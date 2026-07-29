@@ -3,17 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Nivesa — Admin Panel</title>
+<title>Nivesa — USDT Exchange</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
-/* ============================================================
-   Nivesa Admin panel
-   Design tokens match the customer-facing app (customer-app.html)
-   so both surfaces feel like one product. Wired live to Supabase —
-   auth, RLS, and the RPC functions in supabase-setup.sql.
-   ============================================================ */
 :root{
   --ink:#0A101D;
   --surface:#111A2C;
@@ -37,131 +31,190 @@
 }
 *{box-sizing:border-box;margin:0;padding:0;}
 body{
-  background:var(--ink);color:var(--text);font-family:var(--font-body);
-  font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;
+  background:var(--ink);
+  color:var(--text);
+  font-family:var(--font-body);
+  font-size:14px;
+  line-height:1.5;
+  -webkit-font-smoothing:antialiased;
 }
 ::selection{background:var(--tether-dim);color:#fff;}
 a{color:inherit;text-decoration:none;}
 button{font-family:inherit;cursor:pointer;}
-input,select,textarea{font-family:inherit;}
-:focus-visible{outline:2px solid var(--tether-dim);outline-offset:2px;}
+input,select{font-family:inherit;}
 
-/* ---------- Auth / login screen ---------- */
+/* ---------- Auth screen ---------- */
 #authScreen{
-  min-height:100vh;display:flex;align-items:center;justify-content:center;padding:40px 20px;
+  min-height:100vh;
+  display:flex;align-items:center;justify-content:center;
+  padding:40px 20px;
   background:
     radial-gradient(ellipse 700px 400px at 15% 0%, rgba(25,185,128,0.09), transparent 60%),
     radial-gradient(ellipse 700px 400px at 85% 100%, rgba(217,169,74,0.07), transparent 60%);
 }
-.authCard{width:100%;max-width:400px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:36px 32px 30px;}
+.authCard{
+  width:100%;max-width:400px;
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-radius:16px;
+  padding:36px 32px 30px;
+}
 .brandRow{display:flex;align-items:center;gap:10px;margin-bottom:28px;}
 .brandMark{
-  width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--tether),var(--tether-dim));
-  display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:700;color:#04140D;font-size:16px;flex-shrink:0;
+  width:34px;height:34px;border-radius:9px;
+  background:linear-gradient(135deg,var(--tether),var(--tether-dim));
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-display);font-weight:700;color:#04140D;font-size:16px;
 }
 .brandName{font-family:var(--font-display);font-weight:600;font-size:18px;letter-spacing:0.01em;}
 .brandSub{color:var(--text-faint);font-size:11px;font-family:var(--font-mono);}
 
+.authTabs{display:flex;gap:2px;background:var(--surface-2);border-radius:9px;padding:3px;margin-bottom:22px;}
+.authTab{flex:1;text-align:center;padding:8px 0;border-radius:7px;color:var(--text-dim);font-size:13px;font-weight:500;border:none;background:transparent;transition:.15s;}
+.authTab.active{background:var(--line-soft);color:var(--text);}
+
 .field{margin-bottom:14px;}
 .field label{display:block;font-size:12px;color:var(--text-dim);margin-bottom:6px;}
-.field input,.field select,.field textarea{
-  width:100%;background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:10px 12px;
-  color:var(--text);font-size:13.5px;outline:none;transition:.15s;
+.field input,.field select{
+  width:100%;background:var(--surface-2);border:1px solid var(--line);
+  border-radius:8px;padding:10px 12px;color:var(--text);font-size:13.5px;
+  outline:none;transition:.15s;
 }
-.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--tether-dim);background:var(--ink);}
+.field input:focus,.field select:focus{border-color:var(--tether-dim);background:var(--ink);}
 .field .hint{font-size:11px;color:var(--text-faint);margin-top:5px;}
-.field .err{font-size:11px;color:var(--red);margin-top:5px;display:none;}
-.field.hasErr input{border-color:var(--red);}
-.field.hasErr .err{display:block;}
 
 .btnPrimary{
-  background:var(--tether);color:#04140D;border:none;padding:11px 18px;border-radius:8px;font-weight:600;font-size:14px;
-  transition:.15s;display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  width:100%;background:var(--tether);color:#04140D;border:none;
+  padding:11px 0;border-radius:8px;font-weight:600;font-size:14px;margin-top:6px;
+  transition:.15s;
 }
-.btnPrimary.block{width:100%;margin-top:6px;}
 .btnPrimary:hover{background:#1FCB8F;}
-.btnPrimary:disabled{opacity:.5;cursor:not-allowed;}
 .authFoot{margin-top:18px;text-align:center;font-size:11.5px;color:var(--text-faint);}
 
 /* ---------- App shell ---------- */
-#app{display:none;}
+#app{display:none;min-height:100vh;}
 .shell{display:flex;min-height:100vh;}
+
+/* top ticker */
+#ticker{
+  background:var(--surface);border-bottom:1px solid var(--line);
+  display:flex;align-items:center;gap:0;
+  padding:0 0;overflow:hidden;white-space:nowrap;
+  font-family:var(--font-mono);font-size:11.5px;color:var(--text-dim);
+}
+.tickerTrack{display:flex;gap:34px;padding:8px 20px;animation:scrollTicker 26s linear infinite;}
+@keyframes scrollTicker{0%{transform:translateX(0);}100%{transform:translateX(-50%);}}
+.tickerItem{display:flex;align-items:center;gap:7px;flex-shrink:0;}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--tether);box-shadow:0 0 6px var(--tether);}
+.dot.gold{background:var(--gold);box-shadow:0 0 6px var(--gold);}
+.tickerItem b{color:var(--text);font-weight:500;}
+
+/* sidebar */
 .sidebar{
-  width:220px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--line);
-  padding:18px 12px;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;z-index:100;
+  width:220px;flex-shrink:0;background:var(--surface);
+  border-right:1px solid var(--line);
+  padding:18px 12px;display:flex;flex-direction:column;
+  position:sticky;top:0;height:100vh;
 }
 .sideBrand{display:flex;align-items:center;gap:9px;padding:6px 8px 18px;}
 .sideBrand .brandMark{width:28px;height:28px;font-size:13px;}
 .sideBrand .brandName{font-size:15px;}
 .navGroup{margin-bottom:6px;}
-.navLabel{font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-faint);padding:14px 10px 6px;}
+.navLabel{font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-faint);padding:10px 10px 6px;}
 .navItem{
-  display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;color:var(--text-dim);
-  font-size:13.5px;font-weight:500;margin-bottom:2px;border:none;background:transparent;width:100%;text-align:left;
+  display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;
+  color:var(--text-dim);font-size:13.5px;font-weight:500;margin-bottom:2px;border:none;background:transparent;width:100%;text-align:left;
 }
 .navItem:hover{background:var(--surface-2);color:var(--text);}
 .navItem.active{background:var(--tether-bg);color:var(--tether);}
 .navIcon{width:16px;height:16px;flex-shrink:0;opacity:0.9;}
 .sideFoot{margin-top:auto;padding-top:14px;border-top:1px solid var(--line-soft);}
-.adminBox{display:flex;align-items:center;gap:9px;background:var(--surface-2);border:1px solid var(--line);border-radius:9px;padding:9px;margin-bottom:8px;}
-.adminBox .avatar{width:28px;height:28px;flex-shrink:0;}
-.adminBox .aname{font-size:12.5px;font-weight:500;}
-.adminBox .arole{font-size:10.5px;color:var(--text-faint);}
-.logoutBtn{width:100%;text-align:left;color:var(--text-faint);font-size:11.5px;background:none;border:none;padding:7px 6px;display:flex;align-items:center;gap:8px;}
+.roleSwitch{
+  background:var(--surface-2);border:1px solid var(--line);border-radius:9px;padding:10px;font-size:11.5px;color:var(--text-dim);
+}
+.roleSwitch button{
+  width:100%;margin-top:8px;background:var(--line-soft);border:1px solid var(--line);color:var(--text);
+  padding:7px 0;border-radius:7px;font-size:12px;font-weight:500;
+}
+.roleSwitch button:hover{border-color:var(--tether-dim);}
+.logoutBtn{margin-top:8px;color:var(--text-faint);font-size:11.5px;background:none;border:none;padding:6px 0;}
 .logoutBtn:hover{color:var(--red);}
-.navToggle{display:none;background:var(--surface);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:8px 10px;}
 
+/* main */
 .main{flex:1;min-width:0;padding:26px 34px 60px;}
 .pageHead{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:22px;flex-wrap:wrap;gap:12px;}
 .pageTitle{font-family:var(--font-display);font-size:22px;font-weight:600;}
 .pageSub{color:var(--text-dim);font-size:13px;margin-top:4px;}
+.userBadge{display:flex;align-items:center;gap:9px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:7px 12px;}
+.avatar{width:26px;height:26px;border-radius:50%;background:var(--gold-bg);color:var(--gold);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;font-family:var(--font-display);}
+.userBadge .uname{font-size:12.5px;font-weight:500;}
+.userBadge .urole{font-size:10.5px;color:var(--text-faint);}
 
+/* cards / grid */
 .cardGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-bottom:26px;}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px 20px;}
 .card .clabel{font-size:11.5px;color:var(--text-dim);display:flex;align-items:center;justify-content:space-between;}
 .card .cval{font-family:var(--font-display);font-size:25px;font-weight:600;margin-top:10px;}
+.card .cval span{font-size:13px;color:var(--text-dim);font-weight:500;font-family:var(--font-body);}
 .card .csub{font-size:11.5px;color:var(--text-faint);margin-top:6px;}
-.pill{font-size:10px;padding:2px 8px;border-radius:20px;font-weight:600;letter-spacing:.02em;display:inline-block;}
+.pill{font-size:10px;padding:2px 8px;border-radius:20px;font-weight:600;letter-spacing:.02em;}
 .pill.green{background:var(--tether-bg);color:var(--tether);}
 .pill.gold{background:var(--gold-bg);color:var(--gold);}
 .pill.red{background:var(--red-bg);color:var(--red);}
 .pill.gray{background:var(--surface-2);color:var(--text-dim);}
 
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;margin-bottom:22px;overflow:hidden;}
-.panelHead{padding:16px 20px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;}
+.panelHead{padding:16px 20px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;}
 .panelHead h3{font-size:14.5px;font-weight:600;}
 .panelHead .sub{font-size:11.5px;color:var(--text-faint);margin-top:2px;}
 .panelBody{padding:20px;}
-.panelBody.flush{padding:0;}
-
-.filterBar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;align-items:center;}
-.filterBar input[type="search"],.filterBar input[type="text"],.filterBar select{
-  background:var(--surface-2);border:1px solid var(--line);border-radius:8px;color:var(--text);
-  padding:9px 12px;font-size:12.5px;outline:none;
-}
-.filterBar input:focus,.filterBar select:focus{border-color:var(--tether-dim);}
-.filterBar input[type="search"]{min-width:220px;flex:1;}
 
 table{width:100%;border-collapse:collapse;font-size:12.5px;}
-th{text-align:left;padding:10px 14px;color:var(--text-faint);font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--line);white-space:nowrap;}
+th{text-align:left;padding:10px 14px;color:var(--text-faint);font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--line);}
 td{padding:12px 14px;border-bottom:1px solid var(--line-soft);color:var(--text);}
 tr:last-child td{border-bottom:none;}
-tbody tr:hover td{background:var(--surface-2);}
 .mono{font-family:var(--font-mono);font-size:12px;color:var(--text-dim);}
-.emptyRow{padding:44px 20px;text-align:center;color:var(--text-faint);font-size:12.5px;}
-.emptyRow .emptyTitle{color:var(--text-dim);font-size:13.5px;font-weight:500;margin-bottom:4px;}
-.tableFoot{display:flex;justify-content:space-between;align-items:center;padding:12px 20px;border-top:1px solid var(--line);font-size:11.5px;color:var(--text-faint);}
-.pager{display:flex;gap:6px;}
-.pager button{background:var(--surface-2);border:1px solid var(--line);color:var(--text-dim);border-radius:6px;padding:5px 10px;font-size:11.5px;}
-.pager button:hover{color:var(--text);border-color:var(--text-faint);}
-.pager button:disabled{opacity:.4;cursor:not-allowed;}
+.emptyRow{padding:30px;text-align:center;color:var(--text-faint);font-size:12.5px;}
 
+/* forms */
 .formGrid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
 .formGrid.single{grid-template-columns:1fr;max-width:420px;}
-.warnBox{background:var(--gold-bg);border:1px solid rgba(217,169,74,0.3);border-radius:8px;padding:10px 14px;font-size:11.5px;color:var(--gold);margin-bottom:16px;line-height:1.5;}
-.infoBox{background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:10px 14px;font-size:11.5px;color:var(--text-dim);margin-bottom:16px;line-height:1.5;}
+.netGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px;}
+.netCard{background:var(--surface-2);border:1px solid var(--line);border-radius:9px;padding:12px;text-align:center;cursor:pointer;transition:.15s;}
+.netCard:hover{border-color:var(--tether-dim);}
+.netCard.active{border-color:var(--tether);background:var(--tether-bg);}
+.netCard .nname{font-weight:600;font-size:12.5px;}
+.netCard .ncode{font-size:10px;color:var(--text-faint);font-family:var(--font-mono);}
+.qrRow{display:flex;gap:20px;align-items:stretch;margin-bottom:18px;flex-wrap:wrap;}
+.qrBox{
+  background:#fff;border-radius:12px;padding:14px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  width:196px;height:196px;border:1px solid var(--line);
+}
+.qrBox img{display:block;width:168px;height:168px;image-rendering:pixelated;}
+.qrSide{flex:1;min-width:220px;display:flex;flex-direction:column;justify-content:center;}
+.addrBox{
+  background:var(--surface-2);border:1px solid var(--line);border-radius:9px;padding:14px 16px;
+  display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;
+}
+.addrBox .addr{font-family:var(--font-mono);font-size:12px;word-break:break-all;color:var(--text);}
+.copyBtn{background:var(--line-soft);border:1px solid var(--line);color:var(--text-dim);padding:6px 10px;border-radius:6px;font-size:11px;flex-shrink:0;}
+.copyBtn:hover{color:var(--tether);border-color:var(--tether-dim);}
+.warnBox{
+  background:var(--gold-bg);border:1px solid rgba(217,169,74,0.3);border-radius:8px;
+  padding:10px 14px;font-size:11.5px;color:var(--gold);margin-bottom:16px;line-height:1.5;
+}
+.rateDisplay{
+  background:var(--surface-2);border:1px solid var(--line);border-radius:9px;padding:14px 16px;margin-bottom:16px;
+  display:flex;justify-content:space-between;align-items:center;
+}
+.rateDisplay .rlabel{font-size:11.5px;color:var(--text-dim);}
+.rateDisplay .rval{font-family:var(--font-display);font-size:20px;font-weight:600;color:var(--tether);}
+.calcOut{margin-top:14px;padding:14px 16px;background:var(--tether-bg);border:1px solid rgba(25,185,128,0.25);border-radius:9px;display:flex;justify-content:space-between;align-items:center;}
+.calcOut .clab{font-size:12px;color:var(--text-dim);}
+.calcOut .cnum{font-family:var(--font-display);font-size:19px;font-weight:600;}
 
-.btnRow{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap;}
+.btnRow{display:flex;gap:10px;margin-top:18px;}
 .btnGhost{background:transparent;border:1px solid var(--line);color:var(--text-dim);padding:9px 16px;border-radius:8px;font-size:13px;font-weight:500;}
 .btnGhost:hover{border-color:var(--text-faint);color:var(--text);}
 .btnMini{padding:6px 12px;border-radius:6px;font-size:11.5px;font-weight:600;border:none;}
@@ -174,68 +227,103 @@ tbody tr:hover td{background:var(--surface-2);}
 .toggleRow button{padding:8px 18px;border-radius:7px;border:none;background:transparent;color:var(--text-dim);font-size:12.5px;font-weight:500;}
 .toggleRow button.active{background:var(--line-soft);color:var(--text);}
 
-.modalBg{display:none;position:fixed;inset:0;background:rgba(6,10,18,0.7);z-index:300;align-items:center;justify-content:center;padding:20px;}
+.modalBg{display:none;position:fixed;inset:0;background:rgba(6,10,18,0.7);z-index:300;align-items:center;justify-content:center;}
 .modalBg.show{display:flex;}
-.modalCard{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:26px;width:100%;max-width:420px;}
+.modalCard{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:26px;width:100%;max-width:380px;}
 .modalCard h3{font-size:15px;margin-bottom:16px;}
 .toast{
-  position:fixed;bottom:22px;right:22px;background:var(--surface);border:1px solid var(--tether-dim);border-left:3px solid var(--tether);
-  color:var(--text);padding:13px 18px;border-radius:9px;font-size:13px;z-index:400;box-shadow:0 8px 30px rgba(0,0,0,0.4);display:none;max-width:320px;
+  position:fixed;bottom:22px;right:22px;background:var(--surface);border:1px solid var(--tether-dim);
+  border-left:3px solid var(--tether);color:var(--text);padding:13px 18px;border-radius:9px;font-size:13px;
+  z-index:400;box-shadow:0 8px 30px rgba(0,0,0,0.4);display:none;max-width:320px;
 }
 .toast.show{display:block;animation:toastIn .2s ease-out;}
 .toast.err{border-color:var(--red);border-left-color:var(--red);}
 @keyframes toastIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
 
-.skeleton{background:linear-gradient(90deg,var(--surface-2) 0%,var(--line-soft) 50%,var(--surface-2) 100%);background-size:200% 100%;animation:shimmer 1.4s ease-in-out infinite;border-radius:6px;}
-@keyframes shimmer{0%{background-position:200% 0;}100%{background-position:-200% 0;}}
+.trustRow{display:flex;gap:22px;flex-wrap:wrap;margin-top:22px;padding-top:18px;border-top:1px solid var(--line-soft);}
+.trustItem{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--text-faint);}
+.trustItem svg{width:14px;height:14px;color:var(--tether);flex-shrink:0;}
 
 @media(max-width:900px){
   .shell{flex-direction:column;}
-  .sidebar{width:100%;height:auto;position:relative;top:0;flex-direction:row;align-items:center;overflow-x:auto;padding:10px 12px;gap:10px;}
+  .sidebar{width:100%;height:auto;position:relative;top:0;flex-direction:row;overflow-x:auto;padding:10px;}
   .sideBrand,.sideFoot,.navLabel{display:none;}
-  .navGroup{display:flex;gap:4px;margin-bottom:0;}
-  .navToggle{display:inline-flex;}
+  .navGroup{display:flex;gap:4px;}
   .main{padding:20px 16px 40px;}
   .formGrid{grid-template-columns:1fr;}
+  .netGrid{grid-template-columns:repeat(2,1fr);}
 }
 </style>
 </head>
 <body>
 
-<!-- ================= LOGIN SCREEN ================= -->
+<!-- ================= AUTH SCREEN ================= -->
 <div id="authScreen">
   <div class="authCard">
     <div class="brandRow">
       <div class="brandMark">N</div>
-      <div><div class="brandName">Nivesa</div><div class="brandSub">ADMIN CONSOLE</div></div>
+      <div>
+        <div class="brandName">Nivesa</div>
+        <div class="brandSub">USDT ⇄ INR EXCHANGE</div>
+      </div>
     </div>
-    <form id="loginForm" novalidate>
-      <div class="field" id="fld_email">
-        <label>Email</label>
-        <input id="li_email" type="email" placeholder="admin@nivesa.com" autocomplete="username">
-        <div class="err">Enter a valid email address.</div>
-      </div>
-      <div class="field" id="fld_pass">
-        <label>Password</label>
-        <input id="li_pass" type="password" placeholder="••••••••" autocomplete="current-password">
-        <div class="err">Enter your password.</div>
-      </div>
-      <button class="btnPrimary block" id="loginBtn" type="submit">Log in</button>
-    </form>
-    <div class="authFoot">Access is restricted to authorized Nivesa staff.</div>
+
+    <div class="authTabs">
+      <button class="authTab active" id="tabLogin" onclick="setAuthTab('login')">Log in</button>
+      <button class="authTab" id="tabSignup" onclick="setAuthTab('signup')">Create account</button>
+    </div>
+
+    <div id="loginForm">
+      <div class="field"><label>Email</label><input id="li_email" type="email" placeholder="you@example.com"></div>
+      <div class="field"><label>Password</label><input id="li_pass" type="password" placeholder="••••••••"></div>
+      <button class="btnPrimary" id="loginBtn" onclick="doLogin()">Log in</button>
+    </div>
+
+    <div id="signupForm" style="display:none;">
+      <div class="field"><label>Full name</label><input id="su_name" type="text" placeholder="Rahul Sharma"></div>
+      <div class="field"><label>Email</label><input id="su_email" type="email" placeholder="you@example.com"></div>
+      <div class="field"><label>Password</label><input id="su_pass" type="password" placeholder="Create a password"></div>
+      <button class="btnPrimary" id="signupBtn" onclick="doSignup()">Create account</button>
+    </div>
+
+    <div class="authFoot">Your account and balances are stored securely in Supabase.</div>
   </div>
 </div>
 
 <!-- ================= APP SHELL ================= -->
 <div id="app">
+  <div id="ticker">
+    <div class="tickerTrack" id="tickerTrack"></div>
+  </div>
+
   <div class="shell">
-    <div class="sidebar" id="sidebar"></div>
+    <div class="sidebar" id="sidebar">
+      <div class="sideBrand">
+        <div class="brandMark">N</div>
+        <div>
+          <div class="brandName" style="font-size:14px;">Nivesa</div>
+          <div class="brandSub" style="font-size:9.5px;">USDT EXCHANGE</div>
+        </div>
+      </div>
+      <div class="navGroup" id="navGroup"></div>
+      <div class="sideFoot">
+        <div class="roleSwitch" id="roleSwitchBox"></div>
+        <button class="logoutBtn" onclick="doLogout()">Log out</button>
+      </div>
+    </div>
+
     <div class="main">
       <div class="pageHead">
         <div>
-          <button class="navToggle" id="navToggle" aria-label="Toggle navigation">☰</button>
-          <div class="pageTitle" id="pageTitle">—</div>
-          <div class="pageSub" id="pageSub"></div>
+          <div class="pageTitle" id="pageTitle">Dashboard</div>
+          <div class="pageSub" id="pageSub">—</div>
+        </div>
+        <div class="userBadge">
+          <div class="avatar" id="avatarInit">R</div>
+          <div>
+            <div class="uname" id="userBadgeName">—</div>
+            <div class="urole" id="userBadgeRole">—</div>
+          </div>
         </div>
       </div>
       <div id="pageContent"></div>
@@ -243,782 +331,2862 @@ tbody tr:hover td{background:var(--surface-2);}
   </div>
 </div>
 
-<script>
-/* ============================================================
-   Nivesa Admin — single-file scaffold logic
-   No fake data / no business logic here beyond page wiring.
-   >>> BACKEND WIRE-UP POINTS ARE MARKED WITH: 
-   ============================================================ */
+<div class="modalBg" id="modalBg">
+  <div class="modalCard" id="modalCard"></div>
+</div>
+<div class="toast" id="toast"></div>
 
-/* ============================================================
-   Supabase client
+<script>
+/* qrcode-generator by Kazuhiko Arase — MIT licensed, embedded inline for offline QR rendering */
+//---------------------------------------------------------------------
+//
+// QR Code Generator for JavaScript
+//
+// Copyright (c) 2009 Kazuhiko Arase
+//
+// URL: http://www.d-project.com/
+//
+// Licensed under the MIT license:
+//  http://www.opensource.org/licenses/mit-license.php
+//
+// The word 'QR Code' is registered trademark of
+// DENSO WAVE INCORPORATED
+//  http://www.denso-wave.com/qrcode/faqpatent-e.html
+//
+//---------------------------------------------------------------------
+
+var qrcode = function() {
+
+  //---------------------------------------------------------------------
+  // qrcode
+  //---------------------------------------------------------------------
+
+  /**
+   * qrcode
+   * @param typeNumber 1 to 40
+   * @param errorCorrectionLevel 'L','M','Q','H'
+   */
+  var qrcode = function(typeNumber, errorCorrectionLevel) {
+
+    var PAD0 = 0xEC;
+    var PAD1 = 0x11;
+
+    var _typeNumber = typeNumber;
+    var _errorCorrectionLevel = QRErrorCorrectionLevel[errorCorrectionLevel];
+    var _modules = null;
+    var _moduleCount = 0;
+    var _dataCache = null;
+    var _dataList = [];
+
+    var _this = {};
+
+    var makeImpl = function(test, maskPattern) {
+
+      _moduleCount = _typeNumber * 4 + 17;
+      _modules = function(moduleCount) {
+        var modules = new Array(moduleCount);
+        for (var row = 0; row < moduleCount; row += 1) {
+          modules[row] = new Array(moduleCount);
+          for (var col = 0; col < moduleCount; col += 1) {
+            modules[row][col] = null;
+          }
+        }
+        return modules;
+      }(_moduleCount);
+
+      setupPositionProbePattern(0, 0);
+      setupPositionProbePattern(_moduleCount - 7, 0);
+      setupPositionProbePattern(0, _moduleCount - 7);
+      setupPositionAdjustPattern();
+      setupTimingPattern();
+      setupTypeInfo(test, maskPattern);
+
+      if (_typeNumber >= 7) {
+        setupTypeNumber(test);
+      }
+
+      if (_dataCache == null) {
+        _dataCache = createData(_typeNumber, _errorCorrectionLevel, _dataList);
+      }
+
+      mapData(_dataCache, maskPattern);
+    };
+
+    var setupPositionProbePattern = function(row, col) {
+
+      for (var r = -1; r <= 7; r += 1) {
+
+        if (row + r <= -1 || _moduleCount <= row + r) continue;
+
+        for (var c = -1; c <= 7; c += 1) {
+
+          if (col + c <= -1 || _moduleCount <= col + c) continue;
+
+          if ( (0 <= r && r <= 6 && (c == 0 || c == 6) )
+              || (0 <= c && c <= 6 && (r == 0 || r == 6) )
+              || (2 <= r && r <= 4 && 2 <= c && c <= 4) ) {
+            _modules[row + r][col + c] = true;
+          } else {
+            _modules[row + r][col + c] = false;
+          }
+        }
+      }
+    };
+
+    var getBestMaskPattern = function() {
+
+      var minLostPoint = 0;
+      var pattern = 0;
+
+      for (var i = 0; i < 8; i += 1) {
+
+        makeImpl(true, i);
+
+        var lostPoint = QRUtil.getLostPoint(_this);
+
+        if (i == 0 || minLostPoint > lostPoint) {
+          minLostPoint = lostPoint;
+          pattern = i;
+        }
+      }
+
+      return pattern;
+    };
+
+    var setupTimingPattern = function() {
+
+      for (var r = 8; r < _moduleCount - 8; r += 1) {
+        if (_modules[r][6] != null) {
+          continue;
+        }
+        _modules[r][6] = (r % 2 == 0);
+      }
+
+      for (var c = 8; c < _moduleCount - 8; c += 1) {
+        if (_modules[6][c] != null) {
+          continue;
+        }
+        _modules[6][c] = (c % 2 == 0);
+      }
+    };
+
+    var setupPositionAdjustPattern = function() {
+
+      var pos = QRUtil.getPatternPosition(_typeNumber);
+
+      for (var i = 0; i < pos.length; i += 1) {
+
+        for (var j = 0; j < pos.length; j += 1) {
+
+          var row = pos[i];
+          var col = pos[j];
+
+          if (_modules[row][col] != null) {
+            continue;
+          }
+
+          for (var r = -2; r <= 2; r += 1) {
+
+            for (var c = -2; c <= 2; c += 1) {
+
+              if (r == -2 || r == 2 || c == -2 || c == 2
+                  || (r == 0 && c == 0) ) {
+                _modules[row + r][col + c] = true;
+              } else {
+                _modules[row + r][col + c] = false;
+              }
+            }
+          }
+        }
+      }
+    };
+
+    var setupTypeNumber = function(test) {
+
+      var bits = QRUtil.getBCHTypeNumber(_typeNumber);
+
+      for (var i = 0; i < 18; i += 1) {
+        var mod = (!test && ( (bits >> i) & 1) == 1);
+        _modules[Math.floor(i / 3)][i % 3 + _moduleCount - 8 - 3] = mod;
+      }
+
+      for (var i = 0; i < 18; i += 1) {
+        var mod = (!test && ( (bits >> i) & 1) == 1);
+        _modules[i % 3 + _moduleCount - 8 - 3][Math.floor(i / 3)] = mod;
+      }
+    };
+
+    var setupTypeInfo = function(test, maskPattern) {
+
+      var data = (_errorCorrectionLevel << 3) | maskPattern;
+      var bits = QRUtil.getBCHTypeInfo(data);
+
+      // vertical
+      for (var i = 0; i < 15; i += 1) {
+
+        var mod = (!test && ( (bits >> i) & 1) == 1);
+
+        if (i < 6) {
+          _modules[i][8] = mod;
+        } else if (i < 8) {
+          _modules[i + 1][8] = mod;
+        } else {
+          _modules[_moduleCount - 15 + i][8] = mod;
+        }
+      }
+
+      // horizontal
+      for (var i = 0; i < 15; i += 1) {
+
+        var mod = (!test && ( (bits >> i) & 1) == 1);
+
+        if (i < 8) {
+          _modules[8][_moduleCount - i - 1] = mod;
+        } else if (i < 9) {
+          _modules[8][15 - i - 1 + 1] = mod;
+        } else {
+          _modules[8][15 - i - 1] = mod;
+        }
+      }
+
+      // fixed module
+      _modules[_moduleCount - 8][8] = (!test);
+    };
+
+    var mapData = function(data, maskPattern) {
+
+      var inc = -1;
+      var row = _moduleCount - 1;
+      var bitIndex = 7;
+      var byteIndex = 0;
+      var maskFunc = QRUtil.getMaskFunction(maskPattern);
+
+      for (var col = _moduleCount - 1; col > 0; col -= 2) {
+
+        if (col == 6) col -= 1;
+
+        while (true) {
+
+          for (var c = 0; c < 2; c += 1) {
+
+            if (_modules[row][col - c] == null) {
+
+              var dark = false;
+
+              if (byteIndex < data.length) {
+                dark = ( ( (data[byteIndex] >>> bitIndex) & 1) == 1);
+              }
+
+              var mask = maskFunc(row, col - c);
+
+              if (mask) {
+                dark = !dark;
+              }
+
+              _modules[row][col - c] = dark;
+              bitIndex -= 1;
+
+              if (bitIndex == -1) {
+                byteIndex += 1;
+                bitIndex = 7;
+              }
+            }
+          }
+
+          row += inc;
+
+          if (row < 0 || _moduleCount <= row) {
+            row -= inc;
+            inc = -inc;
+            break;
+          }
+        }
+      }
+    };
+
+    var createBytes = function(buffer, rsBlocks) {
+
+      var offset = 0;
+
+      var maxDcCount = 0;
+      var maxEcCount = 0;
+
+      var dcdata = new Array(rsBlocks.length);
+      var ecdata = new Array(rsBlocks.length);
+
+      for (var r = 0; r < rsBlocks.length; r += 1) {
+
+        var dcCount = rsBlocks[r].dataCount;
+        var ecCount = rsBlocks[r].totalCount - dcCount;
+
+        maxDcCount = Math.max(maxDcCount, dcCount);
+        maxEcCount = Math.max(maxEcCount, ecCount);
+
+        dcdata[r] = new Array(dcCount);
+
+        for (var i = 0; i < dcdata[r].length; i += 1) {
+          dcdata[r][i] = 0xff & buffer.getBuffer()[i + offset];
+        }
+        offset += dcCount;
+
+        var rsPoly = QRUtil.getErrorCorrectPolynomial(ecCount);
+        var rawPoly = qrPolynomial(dcdata[r], rsPoly.getLength() - 1);
+
+        var modPoly = rawPoly.mod(rsPoly);
+        ecdata[r] = new Array(rsPoly.getLength() - 1);
+        for (var i = 0; i < ecdata[r].length; i += 1) {
+          var modIndex = i + modPoly.getLength() - ecdata[r].length;
+          ecdata[r][i] = (modIndex >= 0)? modPoly.getAt(modIndex) : 0;
+        }
+      }
+
+      var totalCodeCount = 0;
+      for (var i = 0; i < rsBlocks.length; i += 1) {
+        totalCodeCount += rsBlocks[i].totalCount;
+      }
+
+      var data = new Array(totalCodeCount);
+      var index = 0;
+
+      for (var i = 0; i < maxDcCount; i += 1) {
+        for (var r = 0; r < rsBlocks.length; r += 1) {
+          if (i < dcdata[r].length) {
+            data[index] = dcdata[r][i];
+            index += 1;
+          }
+        }
+      }
+
+      for (var i = 0; i < maxEcCount; i += 1) {
+        for (var r = 0; r < rsBlocks.length; r += 1) {
+          if (i < ecdata[r].length) {
+            data[index] = ecdata[r][i];
+            index += 1;
+          }
+        }
+      }
+
+      return data;
+    };
+
+    var createData = function(typeNumber, errorCorrectionLevel, dataList) {
+
+      var rsBlocks = QRRSBlock.getRSBlocks(typeNumber, errorCorrectionLevel);
+
+      var buffer = qrBitBuffer();
+
+      for (var i = 0; i < dataList.length; i += 1) {
+        var data = dataList[i];
+        buffer.put(data.getMode(), 4);
+        buffer.put(data.getLength(), QRUtil.getLengthInBits(data.getMode(), typeNumber) );
+        data.write(buffer);
+      }
+
+      // calc num max data.
+      var totalDataCount = 0;
+      for (var i = 0; i < rsBlocks.length; i += 1) {
+        totalDataCount += rsBlocks[i].dataCount;
+      }
+
+      if (buffer.getLengthInBits() > totalDataCount * 8) {
+        throw 'code length overflow. ('
+          + buffer.getLengthInBits()
+          + '>'
+          + totalDataCount * 8
+          + ')';
+      }
+
+      // end code
+      if (buffer.getLengthInBits() + 4 <= totalDataCount * 8) {
+        buffer.put(0, 4);
+      }
+
+      // padding
+      while (buffer.getLengthInBits() % 8 != 0) {
+        buffer.putBit(false);
+      }
+
+      // padding
+      while (true) {
+
+        if (buffer.getLengthInBits() >= totalDataCount * 8) {
+          break;
+        }
+        buffer.put(PAD0, 8);
+
+        if (buffer.getLengthInBits() >= totalDataCount * 8) {
+          break;
+        }
+        buffer.put(PAD1, 8);
+      }
+
+      return createBytes(buffer, rsBlocks);
+    };
+
+    _this.addData = function(data, mode) {
+
+      mode = mode || 'Byte';
+
+      var newData = null;
+
+      switch(mode) {
+      case 'Numeric' :
+        newData = qrNumber(data);
+        break;
+      case 'Alphanumeric' :
+        newData = qrAlphaNum(data);
+        break;
+      case 'Byte' :
+        newData = qr8BitByte(data);
+        break;
+      case 'Kanji' :
+        newData = qrKanji(data);
+        break;
+      default :
+        throw 'mode:' + mode;
+      }
+
+      _dataList.push(newData);
+      _dataCache = null;
+    };
+
+    _this.isDark = function(row, col) {
+      if (row < 0 || _moduleCount <= row || col < 0 || _moduleCount <= col) {
+        throw row + ',' + col;
+      }
+      return _modules[row][col];
+    };
+
+    _this.getModuleCount = function() {
+      return _moduleCount;
+    };
+
+    _this.make = function() {
+      if (_typeNumber < 1) {
+        var typeNumber = 1;
+
+        for (; typeNumber < 40; typeNumber++) {
+          var rsBlocks = QRRSBlock.getRSBlocks(typeNumber, _errorCorrectionLevel);
+          var buffer = qrBitBuffer();
+
+          for (var i = 0; i < _dataList.length; i++) {
+            var data = _dataList[i];
+            buffer.put(data.getMode(), 4);
+            buffer.put(data.getLength(), QRUtil.getLengthInBits(data.getMode(), typeNumber) );
+            data.write(buffer);
+          }
+
+          var totalDataCount = 0;
+          for (var i = 0; i < rsBlocks.length; i++) {
+            totalDataCount += rsBlocks[i].dataCount;
+          }
+
+          if (buffer.getLengthInBits() <= totalDataCount * 8) {
+            break;
+          }
+        }
+
+        _typeNumber = typeNumber;
+      }
+
+      makeImpl(false, getBestMaskPattern() );
+    };
+
+    _this.createTableTag = function(cellSize, margin) {
+
+      cellSize = cellSize || 2;
+      margin = (typeof margin == 'undefined')? cellSize * 4 : margin;
+
+      var qrHtml = '';
+
+      qrHtml += '<table style="';
+      qrHtml += ' border-width: 0px; border-style: none;';
+      qrHtml += ' border-collapse: collapse;';
+      qrHtml += ' padding: 0px; margin: ' + margin + 'px;';
+      qrHtml += '">';
+      qrHtml += '<tbody>';
+
+      for (var r = 0; r < _this.getModuleCount(); r += 1) {
+
+        qrHtml += '<tr>';
+
+        for (var c = 0; c < _this.getModuleCount(); c += 1) {
+          qrHtml += '<td style="';
+          qrHtml += ' border-width: 0px; border-style: none;';
+          qrHtml += ' border-collapse: collapse;';
+          qrHtml += ' padding: 0px; margin: 0px;';
+          qrHtml += ' width: ' + cellSize + 'px;';
+          qrHtml += ' height: ' + cellSize + 'px;';
+          qrHtml += ' background-color: ';
+          qrHtml += _this.isDark(r, c)? '#000000' : '#ffffff';
+          qrHtml += ';';
+          qrHtml += '"/>';
+        }
+
+        qrHtml += '</tr>';
+      }
+
+      qrHtml += '</tbody>';
+      qrHtml += '</table>';
+
+      return qrHtml;
+    };
+
+    _this.createSvgTag = function(cellSize, margin, alt, title) {
+
+      var opts = {};
+      if (typeof arguments[0] == 'object') {
+        // Called by options.
+        opts = arguments[0];
+        // overwrite cellSize and margin.
+        cellSize = opts.cellSize;
+        margin = opts.margin;
+        alt = opts.alt;
+        title = opts.title;
+      }
+
+      cellSize = cellSize || 2;
+      margin = (typeof margin == 'undefined')? cellSize * 4 : margin;
+
+      // Compose alt property surrogate
+      alt = (typeof alt === 'string') ? {text: alt} : alt || {};
+      alt.text = alt.text || null;
+      alt.id = (alt.text) ? alt.id || 'qrcode-description' : null;
+
+      // Compose title property surrogate
+      title = (typeof title === 'string') ? {text: title} : title || {};
+      title.text = title.text || null;
+      title.id = (title.text) ? title.id || 'qrcode-title' : null;
+
+      var size = _this.getModuleCount() * cellSize + margin * 2;
+      var c, mc, r, mr, qrSvg='', rect;
+
+      rect = 'l' + cellSize + ',0 0,' + cellSize +
+        ' -' + cellSize + ',0 0,-' + cellSize + 'z ';
+
+      qrSvg += '<svg version="1.1" xmlns="http://www.w3.org/2000/svg"';
+      qrSvg += !opts.scalable ? ' width="' + size + 'px" height="' + size + 'px"' : '';
+      qrSvg += ' viewBox="0 0 ' + size + ' ' + size + '" ';
+      qrSvg += ' preserveAspectRatio="xMinYMin meet"';
+      qrSvg += (title.text || alt.text) ? ' role="img" aria-labelledby="' +
+          escapeXml([title.id, alt.id].join(' ').trim() ) + '"' : '';
+      qrSvg += '>';
+      qrSvg += (title.text) ? '<title id="' + escapeXml(title.id) + '">' +
+          escapeXml(title.text) + '</title>' : '';
+      qrSvg += (alt.text) ? '<description id="' + escapeXml(alt.id) + '">' +
+          escapeXml(alt.text) + '</description>' : '';
+      qrSvg += '<rect width="100%" height="100%" fill="white" cx="0" cy="0"/>';
+      qrSvg += '<path d="';
+
+      for (r = 0; r < _this.getModuleCount(); r += 1) {
+        mr = r * cellSize + margin;
+        for (c = 0; c < _this.getModuleCount(); c += 1) {
+          if (_this.isDark(r, c) ) {
+            mc = c*cellSize+margin;
+            qrSvg += 'M' + mc + ',' + mr + rect;
+          }
+        }
+      }
+
+      qrSvg += '" stroke="transparent" fill="black"/>';
+      qrSvg += '</svg>';
+
+      return qrSvg;
+    };
+
+    _this.createDataURL = function(cellSize, margin) {
+
+      cellSize = cellSize || 2;
+      margin = (typeof margin == 'undefined')? cellSize * 4 : margin;
+
+      var size = _this.getModuleCount() * cellSize + margin * 2;
+      var min = margin;
+      var max = size - margin;
+
+      return createDataURL(size, size, function(x, y) {
+        if (min <= x && x < max && min <= y && y < max) {
+          var c = Math.floor( (x - min) / cellSize);
+          var r = Math.floor( (y - min) / cellSize);
+          return _this.isDark(r, c)? 0 : 1;
+        } else {
+          return 1;
+        }
+      } );
+    };
+
+    _this.createImgTag = function(cellSize, margin, alt) {
+
+      cellSize = cellSize || 2;
+      margin = (typeof margin == 'undefined')? cellSize * 4 : margin;
+
+      var size = _this.getModuleCount() * cellSize + margin * 2;
+
+      var img = '';
+      img += '<img';
+      img += '\u0020src="';
+      img += _this.createDataURL(cellSize, margin);
+      img += '"';
+      img += '\u0020width="';
+      img += size;
+      img += '"';
+      img += '\u0020height="';
+      img += size;
+      img += '"';
+      if (alt) {
+        img += '\u0020alt="';
+        img += escapeXml(alt);
+        img += '"';
+      }
+      img += '/>';
+
+      return img;
+    };
+
+    var escapeXml = function(s) {
+      var escaped = '';
+      for (var i = 0; i < s.length; i += 1) {
+        var c = s.charAt(i);
+        switch(c) {
+        case '<': escaped += '&lt;'; break;
+        case '>': escaped += '&gt;'; break;
+        case '&': escaped += '&amp;'; break;
+        case '"': escaped += '&quot;'; break;
+        default : escaped += c; break;
+        }
+      }
+      return escaped;
+    };
+
+    var _createHalfASCII = function(margin) {
+      var cellSize = 1;
+      margin = (typeof margin == 'undefined')? cellSize * 2 : margin;
+
+      var size = _this.getModuleCount() * cellSize + margin * 2;
+      var min = margin;
+      var max = size - margin;
+
+      var y, x, r1, r2, p;
+
+      var blocks = {
+        '██': '█',
+        '█ ': '▀',
+        ' █': '▄',
+        '  ': ' '
+      };
+
+      var blocksLastLineNoMargin = {
+        '██': '▀',
+        '█ ': '▀',
+        ' █': ' ',
+        '  ': ' '
+      };
+
+      var ascii = '';
+      for (y = 0; y < size; y += 2) {
+        r1 = Math.floor((y - min) / cellSize);
+        r2 = Math.floor((y + 1 - min) / cellSize);
+        for (x = 0; x < size; x += 1) {
+          p = '█';
+
+          if (min <= x && x < max && min <= y && y < max && _this.isDark(r1, Math.floor((x - min) / cellSize))) {
+            p = ' ';
+          }
+
+          if (min <= x && x < max && min <= y+1 && y+1 < max && _this.isDark(r2, Math.floor((x - min) / cellSize))) {
+            p += ' ';
+          }
+          else {
+            p += '█';
+          }
+
+          // Output 2 characters per pixel, to create full square. 1 character per pixels gives only half width of square.
+          ascii += (margin < 1 && y+1 >= max) ? blocksLastLineNoMargin[p] : blocks[p];
+        }
+
+        ascii += '\n';
+      }
+
+      if (size % 2 && margin > 0) {
+        return ascii.substring(0, ascii.length - size - 1) + Array(size+1).join('▀');
+      }
+
+      return ascii.substring(0, ascii.length-1);
+    };
+
+    _this.createASCII = function(cellSize, margin) {
+      cellSize = cellSize || 1;
+
+      if (cellSize < 2) {
+        return _createHalfASCII(margin);
+      }
+
+      cellSize -= 1;
+      margin = (typeof margin == 'undefined')? cellSize * 2 : margin;
+
+      var size = _this.getModuleCount() * cellSize + margin * 2;
+      var min = margin;
+      var max = size - margin;
+
+      var y, x, r, p;
+
+      var white = Array(cellSize+1).join('██');
+      var black = Array(cellSize+1).join('  ');
+
+      var ascii = '';
+      var line = '';
+      for (y = 0; y < size; y += 1) {
+        r = Math.floor( (y - min) / cellSize);
+        line = '';
+        for (x = 0; x < size; x += 1) {
+          p = 1;
+
+          if (min <= x && x < max && min <= y && y < max && _this.isDark(r, Math.floor((x - min) / cellSize))) {
+            p = 0;
+          }
+
+          // Output 2 characters per pixel, to create full square. 1 character per pixels gives only half width of square.
+          line += p ? white : black;
+        }
+
+        for (r = 0; r < cellSize; r += 1) {
+          ascii += line + '\n';
+        }
+      }
+
+      return ascii.substring(0, ascii.length-1);
+    };
+
+    _this.renderTo2dContext = function(context, cellSize) {
+      cellSize = cellSize || 2;
+      var length = _this.getModuleCount();
+      for (var row = 0; row < length; row++) {
+        for (var col = 0; col < length; col++) {
+          context.fillStyle = _this.isDark(row, col) ? 'black' : 'white';
+          context.fillRect(col * cellSize, row * cellSize, cellSize, cellSize);
+        }
+      }
+    }
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // qrcode.stringToBytes
+  //---------------------------------------------------------------------
+
+  qrcode.stringToBytesFuncs = {
+    'default' : function(s) {
+      var bytes = [];
+      for (var i = 0; i < s.length; i += 1) {
+        var c = s.charCodeAt(i);
+        bytes.push(c & 0xff);
+      }
+      return bytes;
+    }
+  };
+
+  qrcode.stringToBytes = qrcode.stringToBytesFuncs['default'];
+
+  //---------------------------------------------------------------------
+  // qrcode.createStringToBytes
+  //---------------------------------------------------------------------
+
+  /**
+   * @param unicodeData base64 string of byte array.
+   * [16bit Unicode],[16bit Bytes], ...
+   * @param numChars
+   */
+  qrcode.createStringToBytes = function(unicodeData, numChars) {
+
+    // create conversion map.
+
+    var unicodeMap = function() {
+
+      var bin = base64DecodeInputStream(unicodeData);
+      var read = function() {
+        var b = bin.read();
+        if (b == -1) throw 'eof';
+        return b;
+      };
+
+      var count = 0;
+      var unicodeMap = {};
+      while (true) {
+        var b0 = bin.read();
+        if (b0 == -1) break;
+        var b1 = read();
+        var b2 = read();
+        var b3 = read();
+        var k = String.fromCharCode( (b0 << 8) | b1);
+        var v = (b2 << 8) | b3;
+        unicodeMap[k] = v;
+        count += 1;
+      }
+      if (count != numChars) {
+        throw count + ' != ' + numChars;
+      }
+
+      return unicodeMap;
+    }();
+
+    var unknownChar = '?'.charCodeAt(0);
+
+    return function(s) {
+      var bytes = [];
+      for (var i = 0; i < s.length; i += 1) {
+        var c = s.charCodeAt(i);
+        if (c < 128) {
+          bytes.push(c);
+        } else {
+          var b = unicodeMap[s.charAt(i)];
+          if (typeof b == 'number') {
+            if ( (b & 0xff) == b) {
+              // 1byte
+              bytes.push(b);
+            } else {
+              // 2bytes
+              bytes.push(b >>> 8);
+              bytes.push(b & 0xff);
+            }
+          } else {
+            bytes.push(unknownChar);
+          }
+        }
+      }
+      return bytes;
+    };
+  };
+
+  //---------------------------------------------------------------------
+  // QRMode
+  //---------------------------------------------------------------------
+
+  var QRMode = {
+    MODE_NUMBER :    1 << 0,
+    MODE_ALPHA_NUM : 1 << 1,
+    MODE_8BIT_BYTE : 1 << 2,
+    MODE_KANJI :     1 << 3
+  };
+
+  //---------------------------------------------------------------------
+  // QRErrorCorrectionLevel
+  //---------------------------------------------------------------------
+
+  var QRErrorCorrectionLevel = {
+    L : 1,
+    M : 0,
+    Q : 3,
+    H : 2
+  };
+
+  //---------------------------------------------------------------------
+  // QRMaskPattern
+  //---------------------------------------------------------------------
+
+  var QRMaskPattern = {
+    PATTERN000 : 0,
+    PATTERN001 : 1,
+    PATTERN010 : 2,
+    PATTERN011 : 3,
+    PATTERN100 : 4,
+    PATTERN101 : 5,
+    PATTERN110 : 6,
+    PATTERN111 : 7
+  };
+
+  //---------------------------------------------------------------------
+  // QRUtil
+  //---------------------------------------------------------------------
+
+  var QRUtil = function() {
+
+    var PATTERN_POSITION_TABLE = [
+      [],
+      [6, 18],
+      [6, 22],
+      [6, 26],
+      [6, 30],
+      [6, 34],
+      [6, 22, 38],
+      [6, 24, 42],
+      [6, 26, 46],
+      [6, 28, 50],
+      [6, 30, 54],
+      [6, 32, 58],
+      [6, 34, 62],
+      [6, 26, 46, 66],
+      [6, 26, 48, 70],
+      [6, 26, 50, 74],
+      [6, 30, 54, 78],
+      [6, 30, 56, 82],
+      [6, 30, 58, 86],
+      [6, 34, 62, 90],
+      [6, 28, 50, 72, 94],
+      [6, 26, 50, 74, 98],
+      [6, 30, 54, 78, 102],
+      [6, 28, 54, 80, 106],
+      [6, 32, 58, 84, 110],
+      [6, 30, 58, 86, 114],
+      [6, 34, 62, 90, 118],
+      [6, 26, 50, 74, 98, 122],
+      [6, 30, 54, 78, 102, 126],
+      [6, 26, 52, 78, 104, 130],
+      [6, 30, 56, 82, 108, 134],
+      [6, 34, 60, 86, 112, 138],
+      [6, 30, 58, 86, 114, 142],
+      [6, 34, 62, 90, 118, 146],
+      [6, 30, 54, 78, 102, 126, 150],
+      [6, 24, 50, 76, 102, 128, 154],
+      [6, 28, 54, 80, 106, 132, 158],
+      [6, 32, 58, 84, 110, 136, 162],
+      [6, 26, 54, 82, 110, 138, 166],
+      [6, 30, 58, 86, 114, 142, 170]
+    ];
+    var G15 = (1 << 10) | (1 << 8) | (1 << 5) | (1 << 4) | (1 << 2) | (1 << 1) | (1 << 0);
+    var G18 = (1 << 12) | (1 << 11) | (1 << 10) | (1 << 9) | (1 << 8) | (1 << 5) | (1 << 2) | (1 << 0);
+    var G15_MASK = (1 << 14) | (1 << 12) | (1 << 10) | (1 << 4) | (1 << 1);
+
+    var _this = {};
+
+    var getBCHDigit = function(data) {
+      var digit = 0;
+      while (data != 0) {
+        digit += 1;
+        data >>>= 1;
+      }
+      return digit;
+    };
+
+    _this.getBCHTypeInfo = function(data) {
+      var d = data << 10;
+      while (getBCHDigit(d) - getBCHDigit(G15) >= 0) {
+        d ^= (G15 << (getBCHDigit(d) - getBCHDigit(G15) ) );
+      }
+      return ( (data << 10) | d) ^ G15_MASK;
+    };
+
+    _this.getBCHTypeNumber = function(data) {
+      var d = data << 12;
+      while (getBCHDigit(d) - getBCHDigit(G18) >= 0) {
+        d ^= (G18 << (getBCHDigit(d) - getBCHDigit(G18) ) );
+      }
+      return (data << 12) | d;
+    };
+
+    _this.getPatternPosition = function(typeNumber) {
+      return PATTERN_POSITION_TABLE[typeNumber - 1];
+    };
+
+    _this.getMaskFunction = function(maskPattern) {
+
+      switch (maskPattern) {
+
+      case QRMaskPattern.PATTERN000 :
+        return function(i, j) { return (i + j) % 2 == 0; };
+      case QRMaskPattern.PATTERN001 :
+        return function(i, j) { return i % 2 == 0; };
+      case QRMaskPattern.PATTERN010 :
+        return function(i, j) { return j % 3 == 0; };
+      case QRMaskPattern.PATTERN011 :
+        return function(i, j) { return (i + j) % 3 == 0; };
+      case QRMaskPattern.PATTERN100 :
+        return function(i, j) { return (Math.floor(i / 2) + Math.floor(j / 3) ) % 2 == 0; };
+      case QRMaskPattern.PATTERN101 :
+        return function(i, j) { return (i * j) % 2 + (i * j) % 3 == 0; };
+      case QRMaskPattern.PATTERN110 :
+        return function(i, j) { return ( (i * j) % 2 + (i * j) % 3) % 2 == 0; };
+      case QRMaskPattern.PATTERN111 :
+        return function(i, j) { return ( (i * j) % 3 + (i + j) % 2) % 2 == 0; };
+
+      default :
+        throw 'bad maskPattern:' + maskPattern;
+      }
+    };
+
+    _this.getErrorCorrectPolynomial = function(errorCorrectLength) {
+      var a = qrPolynomial([1], 0);
+      for (var i = 0; i < errorCorrectLength; i += 1) {
+        a = a.multiply(qrPolynomial([1, QRMath.gexp(i)], 0) );
+      }
+      return a;
+    };
+
+    _this.getLengthInBits = function(mode, type) {
+
+      if (1 <= type && type < 10) {
+
+        // 1 - 9
+
+        switch(mode) {
+        case QRMode.MODE_NUMBER    : return 10;
+        case QRMode.MODE_ALPHA_NUM : return 9;
+        case QRMode.MODE_8BIT_BYTE : return 8;
+        case QRMode.MODE_KANJI     : return 8;
+        default :
+          throw 'mode:' + mode;
+        }
+
+      } else if (type < 27) {
+
+        // 10 - 26
+
+        switch(mode) {
+        case QRMode.MODE_NUMBER    : return 12;
+        case QRMode.MODE_ALPHA_NUM : return 11;
+        case QRMode.MODE_8BIT_BYTE : return 16;
+        case QRMode.MODE_KANJI     : return 10;
+        default :
+          throw 'mode:' + mode;
+        }
+
+      } else if (type < 41) {
+
+        // 27 - 40
+
+        switch(mode) {
+        case QRMode.MODE_NUMBER    : return 14;
+        case QRMode.MODE_ALPHA_NUM : return 13;
+        case QRMode.MODE_8BIT_BYTE : return 16;
+        case QRMode.MODE_KANJI     : return 12;
+        default :
+          throw 'mode:' + mode;
+        }
+
+      } else {
+        throw 'type:' + type;
+      }
+    };
+
+    _this.getLostPoint = function(qrcode) {
+
+      var moduleCount = qrcode.getModuleCount();
+
+      var lostPoint = 0;
+
+      // LEVEL1
+
+      for (var row = 0; row < moduleCount; row += 1) {
+        for (var col = 0; col < moduleCount; col += 1) {
+
+          var sameCount = 0;
+          var dark = qrcode.isDark(row, col);
+
+          for (var r = -1; r <= 1; r += 1) {
+
+            if (row + r < 0 || moduleCount <= row + r) {
+              continue;
+            }
+
+            for (var c = -1; c <= 1; c += 1) {
+
+              if (col + c < 0 || moduleCount <= col + c) {
+                continue;
+              }
+
+              if (r == 0 && c == 0) {
+                continue;
+              }
+
+              if (dark == qrcode.isDark(row + r, col + c) ) {
+                sameCount += 1;
+              }
+            }
+          }
+
+          if (sameCount > 5) {
+            lostPoint += (3 + sameCount - 5);
+          }
+        }
+      };
+
+      // LEVEL2
+
+      for (var row = 0; row < moduleCount - 1; row += 1) {
+        for (var col = 0; col < moduleCount - 1; col += 1) {
+          var count = 0;
+          if (qrcode.isDark(row, col) ) count += 1;
+          if (qrcode.isDark(row + 1, col) ) count += 1;
+          if (qrcode.isDark(row, col + 1) ) count += 1;
+          if (qrcode.isDark(row + 1, col + 1) ) count += 1;
+          if (count == 0 || count == 4) {
+            lostPoint += 3;
+          }
+        }
+      }
+
+      // LEVEL3
+
+      for (var row = 0; row < moduleCount; row += 1) {
+        for (var col = 0; col < moduleCount - 6; col += 1) {
+          if (qrcode.isDark(row, col)
+              && !qrcode.isDark(row, col + 1)
+              &&  qrcode.isDark(row, col + 2)
+              &&  qrcode.isDark(row, col + 3)
+              &&  qrcode.isDark(row, col + 4)
+              && !qrcode.isDark(row, col + 5)
+              &&  qrcode.isDark(row, col + 6) ) {
+            lostPoint += 40;
+          }
+        }
+      }
+
+      for (var col = 0; col < moduleCount; col += 1) {
+        for (var row = 0; row < moduleCount - 6; row += 1) {
+          if (qrcode.isDark(row, col)
+              && !qrcode.isDark(row + 1, col)
+              &&  qrcode.isDark(row + 2, col)
+              &&  qrcode.isDark(row + 3, col)
+              &&  qrcode.isDark(row + 4, col)
+              && !qrcode.isDark(row + 5, col)
+              &&  qrcode.isDark(row + 6, col) ) {
+            lostPoint += 40;
+          }
+        }
+      }
+
+      // LEVEL4
+
+      var darkCount = 0;
+
+      for (var col = 0; col < moduleCount; col += 1) {
+        for (var row = 0; row < moduleCount; row += 1) {
+          if (qrcode.isDark(row, col) ) {
+            darkCount += 1;
+          }
+        }
+      }
+
+      var ratio = Math.abs(100 * darkCount / moduleCount / moduleCount - 50) / 5;
+      lostPoint += ratio * 10;
+
+      return lostPoint;
+    };
+
+    return _this;
+  }();
+
+  //---------------------------------------------------------------------
+  // QRMath
+  //---------------------------------------------------------------------
+
+  var QRMath = function() {
+
+    var EXP_TABLE = new Array(256);
+    var LOG_TABLE = new Array(256);
+
+    // initialize tables
+    for (var i = 0; i < 8; i += 1) {
+      EXP_TABLE[i] = 1 << i;
+    }
+    for (var i = 8; i < 256; i += 1) {
+      EXP_TABLE[i] = EXP_TABLE[i - 4]
+        ^ EXP_TABLE[i - 5]
+        ^ EXP_TABLE[i - 6]
+        ^ EXP_TABLE[i - 8];
+    }
+    for (var i = 0; i < 255; i += 1) {
+      LOG_TABLE[EXP_TABLE[i] ] = i;
+    }
+
+    var _this = {};
+
+    _this.glog = function(n) {
+
+      if (n < 1) {
+        throw 'glog(' + n + ')';
+      }
+
+      return LOG_TABLE[n];
+    };
+
+    _this.gexp = function(n) {
+
+      while (n < 0) {
+        n += 255;
+      }
+
+      while (n >= 256) {
+        n -= 255;
+      }
+
+      return EXP_TABLE[n];
+    };
+
+    return _this;
+  }();
+
+  //---------------------------------------------------------------------
+  // qrPolynomial
+  //---------------------------------------------------------------------
+
+  function qrPolynomial(num, shift) {
+
+    if (typeof num.length == 'undefined') {
+      throw num.length + '/' + shift;
+    }
+
+    var _num = function() {
+      var offset = 0;
+      while (offset < num.length && num[offset] == 0) {
+        offset += 1;
+      }
+      var _num = new Array(num.length - offset + shift);
+      for (var i = 0; i < num.length - offset; i += 1) {
+        _num[i] = num[i + offset];
+      }
+      return _num;
+    }();
+
+    var _this = {};
+
+    _this.getAt = function(index) {
+      return _num[index];
+    };
+
+    _this.getLength = function() {
+      return _num.length;
+    };
+
+    _this.multiply = function(e) {
+
+      var num = new Array(_this.getLength() + e.getLength() - 1);
+
+      for (var i = 0; i < _this.getLength(); i += 1) {
+        for (var j = 0; j < e.getLength(); j += 1) {
+          num[i + j] ^= QRMath.gexp(QRMath.glog(_this.getAt(i) ) + QRMath.glog(e.getAt(j) ) );
+        }
+      }
+
+      return qrPolynomial(num, 0);
+    };
+
+    _this.mod = function(e) {
+
+      if (_this.getLength() - e.getLength() < 0) {
+        return _this;
+      }
+
+      var ratio = QRMath.glog(_this.getAt(0) ) - QRMath.glog(e.getAt(0) );
+
+      var num = new Array(_this.getLength() );
+      for (var i = 0; i < _this.getLength(); i += 1) {
+        num[i] = _this.getAt(i);
+      }
+
+      for (var i = 0; i < e.getLength(); i += 1) {
+        num[i] ^= QRMath.gexp(QRMath.glog(e.getAt(i) ) + ratio);
+      }
+
+      // recursive call
+      return qrPolynomial(num, 0).mod(e);
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // QRRSBlock
+  //---------------------------------------------------------------------
+
+  var QRRSBlock = function() {
+
+    var RS_BLOCK_TABLE = [
+
+      // L
+      // M
+      // Q
+      // H
+
+      // 1
+      [1, 26, 19],
+      [1, 26, 16],
+      [1, 26, 13],
+      [1, 26, 9],
+
+      // 2
+      [1, 44, 34],
+      [1, 44, 28],
+      [1, 44, 22],
+      [1, 44, 16],
+
+      // 3
+      [1, 70, 55],
+      [1, 70, 44],
+      [2, 35, 17],
+      [2, 35, 13],
+
+      // 4
+      [1, 100, 80],
+      [2, 50, 32],
+      [2, 50, 24],
+      [4, 25, 9],
+
+      // 5
+      [1, 134, 108],
+      [2, 67, 43],
+      [2, 33, 15, 2, 34, 16],
+      [2, 33, 11, 2, 34, 12],
+
+      // 6
+      [2, 86, 68],
+      [4, 43, 27],
+      [4, 43, 19],
+      [4, 43, 15],
+
+      // 7
+      [2, 98, 78],
+      [4, 49, 31],
+      [2, 32, 14, 4, 33, 15],
+      [4, 39, 13, 1, 40, 14],
+
+      // 8
+      [2, 121, 97],
+      [2, 60, 38, 2, 61, 39],
+      [4, 40, 18, 2, 41, 19],
+      [4, 40, 14, 2, 41, 15],
+
+      // 9
+      [2, 146, 116],
+      [3, 58, 36, 2, 59, 37],
+      [4, 36, 16, 4, 37, 17],
+      [4, 36, 12, 4, 37, 13],
+
+      // 10
+      [2, 86, 68, 2, 87, 69],
+      [4, 69, 43, 1, 70, 44],
+      [6, 43, 19, 2, 44, 20],
+      [6, 43, 15, 2, 44, 16],
+
+      // 11
+      [4, 101, 81],
+      [1, 80, 50, 4, 81, 51],
+      [4, 50, 22, 4, 51, 23],
+      [3, 36, 12, 8, 37, 13],
+
+      // 12
+      [2, 116, 92, 2, 117, 93],
+      [6, 58, 36, 2, 59, 37],
+      [4, 46, 20, 6, 47, 21],
+      [7, 42, 14, 4, 43, 15],
+
+      // 13
+      [4, 133, 107],
+      [8, 59, 37, 1, 60, 38],
+      [8, 44, 20, 4, 45, 21],
+      [12, 33, 11, 4, 34, 12],
+
+      // 14
+      [3, 145, 115, 1, 146, 116],
+      [4, 64, 40, 5, 65, 41],
+      [11, 36, 16, 5, 37, 17],
+      [11, 36, 12, 5, 37, 13],
+
+      // 15
+      [5, 109, 87, 1, 110, 88],
+      [5, 65, 41, 5, 66, 42],
+      [5, 54, 24, 7, 55, 25],
+      [11, 36, 12, 7, 37, 13],
+
+      // 16
+      [5, 122, 98, 1, 123, 99],
+      [7, 73, 45, 3, 74, 46],
+      [15, 43, 19, 2, 44, 20],
+      [3, 45, 15, 13, 46, 16],
+
+      // 17
+      [1, 135, 107, 5, 136, 108],
+      [10, 74, 46, 1, 75, 47],
+      [1, 50, 22, 15, 51, 23],
+      [2, 42, 14, 17, 43, 15],
+
+      // 18
+      [5, 150, 120, 1, 151, 121],
+      [9, 69, 43, 4, 70, 44],
+      [17, 50, 22, 1, 51, 23],
+      [2, 42, 14, 19, 43, 15],
+
+      // 19
+      [3, 141, 113, 4, 142, 114],
+      [3, 70, 44, 11, 71, 45],
+      [17, 47, 21, 4, 48, 22],
+      [9, 39, 13, 16, 40, 14],
+
+      // 20
+      [3, 135, 107, 5, 136, 108],
+      [3, 67, 41, 13, 68, 42],
+      [15, 54, 24, 5, 55, 25],
+      [15, 43, 15, 10, 44, 16],
+
+      // 21
+      [4, 144, 116, 4, 145, 117],
+      [17, 68, 42],
+      [17, 50, 22, 6, 51, 23],
+      [19, 46, 16, 6, 47, 17],
+
+      // 22
+      [2, 139, 111, 7, 140, 112],
+      [17, 74, 46],
+      [7, 54, 24, 16, 55, 25],
+      [34, 37, 13],
+
+      // 23
+      [4, 151, 121, 5, 152, 122],
+      [4, 75, 47, 14, 76, 48],
+      [11, 54, 24, 14, 55, 25],
+      [16, 45, 15, 14, 46, 16],
+
+      // 24
+      [6, 147, 117, 4, 148, 118],
+      [6, 73, 45, 14, 74, 46],
+      [11, 54, 24, 16, 55, 25],
+      [30, 46, 16, 2, 47, 17],
+
+      // 25
+      [8, 132, 106, 4, 133, 107],
+      [8, 75, 47, 13, 76, 48],
+      [7, 54, 24, 22, 55, 25],
+      [22, 45, 15, 13, 46, 16],
+
+      // 26
+      [10, 142, 114, 2, 143, 115],
+      [19, 74, 46, 4, 75, 47],
+      [28, 50, 22, 6, 51, 23],
+      [33, 46, 16, 4, 47, 17],
+
+      // 27
+      [8, 152, 122, 4, 153, 123],
+      [22, 73, 45, 3, 74, 46],
+      [8, 53, 23, 26, 54, 24],
+      [12, 45, 15, 28, 46, 16],
+
+      // 28
+      [3, 147, 117, 10, 148, 118],
+      [3, 73, 45, 23, 74, 46],
+      [4, 54, 24, 31, 55, 25],
+      [11, 45, 15, 31, 46, 16],
+
+      // 29
+      [7, 146, 116, 7, 147, 117],
+      [21, 73, 45, 7, 74, 46],
+      [1, 53, 23, 37, 54, 24],
+      [19, 45, 15, 26, 46, 16],
+
+      // 30
+      [5, 145, 115, 10, 146, 116],
+      [19, 75, 47, 10, 76, 48],
+      [15, 54, 24, 25, 55, 25],
+      [23, 45, 15, 25, 46, 16],
+
+      // 31
+      [13, 145, 115, 3, 146, 116],
+      [2, 74, 46, 29, 75, 47],
+      [42, 54, 24, 1, 55, 25],
+      [23, 45, 15, 28, 46, 16],
+
+      // 32
+      [17, 145, 115],
+      [10, 74, 46, 23, 75, 47],
+      [10, 54, 24, 35, 55, 25],
+      [19, 45, 15, 35, 46, 16],
+
+      // 33
+      [17, 145, 115, 1, 146, 116],
+      [14, 74, 46, 21, 75, 47],
+      [29, 54, 24, 19, 55, 25],
+      [11, 45, 15, 46, 46, 16],
+
+      // 34
+      [13, 145, 115, 6, 146, 116],
+      [14, 74, 46, 23, 75, 47],
+      [44, 54, 24, 7, 55, 25],
+      [59, 46, 16, 1, 47, 17],
+
+      // 35
+      [12, 151, 121, 7, 152, 122],
+      [12, 75, 47, 26, 76, 48],
+      [39, 54, 24, 14, 55, 25],
+      [22, 45, 15, 41, 46, 16],
+
+      // 36
+      [6, 151, 121, 14, 152, 122],
+      [6, 75, 47, 34, 76, 48],
+      [46, 54, 24, 10, 55, 25],
+      [2, 45, 15, 64, 46, 16],
+
+      // 37
+      [17, 152, 122, 4, 153, 123],
+      [29, 74, 46, 14, 75, 47],
+      [49, 54, 24, 10, 55, 25],
+      [24, 45, 15, 46, 46, 16],
+
+      // 38
+      [4, 152, 122, 18, 153, 123],
+      [13, 74, 46, 32, 75, 47],
+      [48, 54, 24, 14, 55, 25],
+      [42, 45, 15, 32, 46, 16],
+
+      // 39
+      [20, 147, 117, 4, 148, 118],
+      [40, 75, 47, 7, 76, 48],
+      [43, 54, 24, 22, 55, 25],
+      [10, 45, 15, 67, 46, 16],
+
+      // 40
+      [19, 148, 118, 6, 149, 119],
+      [18, 75, 47, 31, 76, 48],
+      [34, 54, 24, 34, 55, 25],
+      [20, 45, 15, 61, 46, 16]
+    ];
+
+    var qrRSBlock = function(totalCount, dataCount) {
+      var _this = {};
+      _this.totalCount = totalCount;
+      _this.dataCount = dataCount;
+      return _this;
+    };
+
+    var _this = {};
+
+    var getRsBlockTable = function(typeNumber, errorCorrectionLevel) {
+
+      switch(errorCorrectionLevel) {
+      case QRErrorCorrectionLevel.L :
+        return RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 0];
+      case QRErrorCorrectionLevel.M :
+        return RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 1];
+      case QRErrorCorrectionLevel.Q :
+        return RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 2];
+      case QRErrorCorrectionLevel.H :
+        return RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 3];
+      default :
+        return undefined;
+      }
+    };
+
+    _this.getRSBlocks = function(typeNumber, errorCorrectionLevel) {
+
+      var rsBlock = getRsBlockTable(typeNumber, errorCorrectionLevel);
+
+      if (typeof rsBlock == 'undefined') {
+        throw 'bad rs block @ typeNumber:' + typeNumber +
+            '/errorCorrectionLevel:' + errorCorrectionLevel;
+      }
+
+      var length = rsBlock.length / 3;
+
+      var list = [];
+
+      for (var i = 0; i < length; i += 1) {
+
+        var count = rsBlock[i * 3 + 0];
+        var totalCount = rsBlock[i * 3 + 1];
+        var dataCount = rsBlock[i * 3 + 2];
+
+        for (var j = 0; j < count; j += 1) {
+          list.push(qrRSBlock(totalCount, dataCount) );
+        }
+      }
+
+      return list;
+    };
+
+    return _this;
+  }();
+
+  //---------------------------------------------------------------------
+  // qrBitBuffer
+  //---------------------------------------------------------------------
+
+  var qrBitBuffer = function() {
+
+    var _buffer = [];
+    var _length = 0;
+
+    var _this = {};
+
+    _this.getBuffer = function() {
+      return _buffer;
+    };
+
+    _this.getAt = function(index) {
+      var bufIndex = Math.floor(index / 8);
+      return ( (_buffer[bufIndex] >>> (7 - index % 8) ) & 1) == 1;
+    };
+
+    _this.put = function(num, length) {
+      for (var i = 0; i < length; i += 1) {
+        _this.putBit( ( (num >>> (length - i - 1) ) & 1) == 1);
+      }
+    };
+
+    _this.getLengthInBits = function() {
+      return _length;
+    };
+
+    _this.putBit = function(bit) {
+
+      var bufIndex = Math.floor(_length / 8);
+      if (_buffer.length <= bufIndex) {
+        _buffer.push(0);
+      }
+
+      if (bit) {
+        _buffer[bufIndex] |= (0x80 >>> (_length % 8) );
+      }
+
+      _length += 1;
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // qrNumber
+  //---------------------------------------------------------------------
+
+  var qrNumber = function(data) {
+
+    var _mode = QRMode.MODE_NUMBER;
+    var _data = data;
+
+    var _this = {};
+
+    _this.getMode = function() {
+      return _mode;
+    };
+
+    _this.getLength = function(buffer) {
+      return _data.length;
+    };
+
+    _this.write = function(buffer) {
+
+      var data = _data;
+
+      var i = 0;
+
+      while (i + 2 < data.length) {
+        buffer.put(strToNum(data.substring(i, i + 3) ), 10);
+        i += 3;
+      }
+
+      if (i < data.length) {
+        if (data.length - i == 1) {
+          buffer.put(strToNum(data.substring(i, i + 1) ), 4);
+        } else if (data.length - i == 2) {
+          buffer.put(strToNum(data.substring(i, i + 2) ), 7);
+        }
+      }
+    };
+
+    var strToNum = function(s) {
+      var num = 0;
+      for (var i = 0; i < s.length; i += 1) {
+        num = num * 10 + chatToNum(s.charAt(i) );
+      }
+      return num;
+    };
+
+    var chatToNum = function(c) {
+      if ('0' <= c && c <= '9') {
+        return c.charCodeAt(0) - '0'.charCodeAt(0);
+      }
+      throw 'illegal char :' + c;
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // qrAlphaNum
+  //---------------------------------------------------------------------
+
+  var qrAlphaNum = function(data) {
+
+    var _mode = QRMode.MODE_ALPHA_NUM;
+    var _data = data;
+
+    var _this = {};
+
+    _this.getMode = function() {
+      return _mode;
+    };
+
+    _this.getLength = function(buffer) {
+      return _data.length;
+    };
+
+    _this.write = function(buffer) {
+
+      var s = _data;
+
+      var i = 0;
+
+      while (i + 1 < s.length) {
+        buffer.put(
+          getCode(s.charAt(i) ) * 45 +
+          getCode(s.charAt(i + 1) ), 11);
+        i += 2;
+      }
+
+      if (i < s.length) {
+        buffer.put(getCode(s.charAt(i) ), 6);
+      }
+    };
+
+    var getCode = function(c) {
+
+      if ('0' <= c && c <= '9') {
+        return c.charCodeAt(0) - '0'.charCodeAt(0);
+      } else if ('A' <= c && c <= 'Z') {
+        return c.charCodeAt(0) - 'A'.charCodeAt(0) + 10;
+      } else {
+        switch (c) {
+        case ' ' : return 36;
+        case '$' : return 37;
+        case '%' : return 38;
+        case '*' : return 39;
+        case '+' : return 40;
+        case '-' : return 41;
+        case '.' : return 42;
+        case '/' : return 43;
+        case ':' : return 44;
+        default :
+          throw 'illegal char :' + c;
+        }
+      }
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // qr8BitByte
+  //---------------------------------------------------------------------
+
+  var qr8BitByte = function(data) {
+
+    var _mode = QRMode.MODE_8BIT_BYTE;
+    var _data = data;
+    var _bytes = qrcode.stringToBytes(data);
+
+    var _this = {};
+
+    _this.getMode = function() {
+      return _mode;
+    };
+
+    _this.getLength = function(buffer) {
+      return _bytes.length;
+    };
+
+    _this.write = function(buffer) {
+      for (var i = 0; i < _bytes.length; i += 1) {
+        buffer.put(_bytes[i], 8);
+      }
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // qrKanji
+  //---------------------------------------------------------------------
+
+  var qrKanji = function(data) {
+
+    var _mode = QRMode.MODE_KANJI;
+    var _data = data;
+
+    var stringToBytes = qrcode.stringToBytesFuncs['SJIS'];
+    if (!stringToBytes) {
+      throw 'sjis not supported.';
+    }
+    !function(c, code) {
+      // self test for sjis support.
+      var test = stringToBytes(c);
+      if (test.length != 2 || ( (test[0] << 8) | test[1]) != code) {
+        throw 'sjis not supported.';
+      }
+    }('\u53cb', 0x9746);
+
+    var _bytes = stringToBytes(data);
+
+    var _this = {};
+
+    _this.getMode = function() {
+      return _mode;
+    };
+
+    _this.getLength = function(buffer) {
+      return ~~(_bytes.length / 2);
+    };
+
+    _this.write = function(buffer) {
+
+      var data = _bytes;
+
+      var i = 0;
+
+      while (i + 1 < data.length) {
+
+        var c = ( (0xff & data[i]) << 8) | (0xff & data[i + 1]);
+
+        if (0x8140 <= c && c <= 0x9FFC) {
+          c -= 0x8140;
+        } else if (0xE040 <= c && c <= 0xEBBF) {
+          c -= 0xC140;
+        } else {
+          throw 'illegal char at ' + (i + 1) + '/' + c;
+        }
+
+        c = ( (c >>> 8) & 0xff) * 0xC0 + (c & 0xff);
+
+        buffer.put(c, 13);
+
+        i += 2;
+      }
+
+      if (i < data.length) {
+        throw 'illegal char at ' + (i + 1);
+      }
+    };
+
+    return _this;
+  };
+
+  //=====================================================================
+  // GIF Support etc.
+  //
+
+  //---------------------------------------------------------------------
+  // byteArrayOutputStream
+  //---------------------------------------------------------------------
+
+  var byteArrayOutputStream = function() {
+
+    var _bytes = [];
+
+    var _this = {};
+
+    _this.writeByte = function(b) {
+      _bytes.push(b & 0xff);
+    };
+
+    _this.writeShort = function(i) {
+      _this.writeByte(i);
+      _this.writeByte(i >>> 8);
+    };
+
+    _this.writeBytes = function(b, off, len) {
+      off = off || 0;
+      len = len || b.length;
+      for (var i = 0; i < len; i += 1) {
+        _this.writeByte(b[i + off]);
+      }
+    };
+
+    _this.writeString = function(s) {
+      for (var i = 0; i < s.length; i += 1) {
+        _this.writeByte(s.charCodeAt(i) );
+      }
+    };
+
+    _this.toByteArray = function() {
+      return _bytes;
+    };
+
+    _this.toString = function() {
+      var s = '';
+      s += '[';
+      for (var i = 0; i < _bytes.length; i += 1) {
+        if (i > 0) {
+          s += ',';
+        }
+        s += _bytes[i];
+      }
+      s += ']';
+      return s;
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // base64EncodeOutputStream
+  //---------------------------------------------------------------------
+
+  var base64EncodeOutputStream = function() {
+
+    var _buffer = 0;
+    var _buflen = 0;
+    var _length = 0;
+    var _base64 = '';
+
+    var _this = {};
+
+    var writeEncoded = function(b) {
+      _base64 += String.fromCharCode(encode(b & 0x3f) );
+    };
+
+    var encode = function(n) {
+      if (n < 0) {
+        // error.
+      } else if (n < 26) {
+        return 0x41 + n;
+      } else if (n < 52) {
+        return 0x61 + (n - 26);
+      } else if (n < 62) {
+        return 0x30 + (n - 52);
+      } else if (n == 62) {
+        return 0x2b;
+      } else if (n == 63) {
+        return 0x2f;
+      }
+      throw 'n:' + n;
+    };
+
+    _this.writeByte = function(n) {
+
+      _buffer = (_buffer << 8) | (n & 0xff);
+      _buflen += 8;
+      _length += 1;
+
+      while (_buflen >= 6) {
+        writeEncoded(_buffer >>> (_buflen - 6) );
+        _buflen -= 6;
+      }
+    };
+
+    _this.flush = function() {
+
+      if (_buflen > 0) {
+        writeEncoded(_buffer << (6 - _buflen) );
+        _buffer = 0;
+        _buflen = 0;
+      }
+
+      if (_length % 3 != 0) {
+        // padding
+        var padlen = 3 - _length % 3;
+        for (var i = 0; i < padlen; i += 1) {
+          _base64 += '=';
+        }
+      }
+    };
+
+    _this.toString = function() {
+      return _base64;
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // base64DecodeInputStream
+  //---------------------------------------------------------------------
+
+  var base64DecodeInputStream = function(str) {
+
+    var _str = str;
+    var _pos = 0;
+    var _buffer = 0;
+    var _buflen = 0;
+
+    var _this = {};
+
+    _this.read = function() {
+
+      while (_buflen < 8) {
+
+        if (_pos >= _str.length) {
+          if (_buflen == 0) {
+            return -1;
+          }
+          throw 'unexpected end of file./' + _buflen;
+        }
+
+        var c = _str.charAt(_pos);
+        _pos += 1;
+
+        if (c == '=') {
+          _buflen = 0;
+          return -1;
+        } else if (c.match(/^\s$/) ) {
+          // ignore if whitespace.
+          continue;
+        }
+
+        _buffer = (_buffer << 6) | decode(c.charCodeAt(0) );
+        _buflen += 6;
+      }
+
+      var n = (_buffer >>> (_buflen - 8) ) & 0xff;
+      _buflen -= 8;
+      return n;
+    };
+
+    var decode = function(c) {
+      if (0x41 <= c && c <= 0x5a) {
+        return c - 0x41;
+      } else if (0x61 <= c && c <= 0x7a) {
+        return c - 0x61 + 26;
+      } else if (0x30 <= c && c <= 0x39) {
+        return c - 0x30 + 52;
+      } else if (c == 0x2b) {
+        return 62;
+      } else if (c == 0x2f) {
+        return 63;
+      } else {
+        throw 'c:' + c;
+      }
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // gifImage (B/W)
+  //---------------------------------------------------------------------
+
+  var gifImage = function(width, height) {
+
+    var _width = width;
+    var _height = height;
+    var _data = new Array(width * height);
+
+    var _this = {};
+
+    _this.setPixel = function(x, y, pixel) {
+      _data[y * _width + x] = pixel;
+    };
+
+    _this.write = function(out) {
+
+      //---------------------------------
+      // GIF Signature
+
+      out.writeString('GIF87a');
+
+      //---------------------------------
+      // Screen Descriptor
+
+      out.writeShort(_width);
+      out.writeShort(_height);
+
+      out.writeByte(0x80); // 2bit
+      out.writeByte(0);
+      out.writeByte(0);
+
+      //---------------------------------
+      // Global Color Map
+
+      // black
+      out.writeByte(0x00);
+      out.writeByte(0x00);
+      out.writeByte(0x00);
+
+      // white
+      out.writeByte(0xff);
+      out.writeByte(0xff);
+      out.writeByte(0xff);
+
+      //---------------------------------
+      // Image Descriptor
+
+      out.writeString(',');
+      out.writeShort(0);
+      out.writeShort(0);
+      out.writeShort(_width);
+      out.writeShort(_height);
+      out.writeByte(0);
+
+      //---------------------------------
+      // Local Color Map
+
+      //---------------------------------
+      // Raster Data
+
+      var lzwMinCodeSize = 2;
+      var raster = getLZWRaster(lzwMinCodeSize);
+
+      out.writeByte(lzwMinCodeSize);
+
+      var offset = 0;
+
+      while (raster.length - offset > 255) {
+        out.writeByte(255);
+        out.writeBytes(raster, offset, 255);
+        offset += 255;
+      }
+
+      out.writeByte(raster.length - offset);
+      out.writeBytes(raster, offset, raster.length - offset);
+      out.writeByte(0x00);
+
+      //---------------------------------
+      // GIF Terminator
+      out.writeString(';');
+    };
+
+    var bitOutputStream = function(out) {
+
+      var _out = out;
+      var _bitLength = 0;
+      var _bitBuffer = 0;
+
+      var _this = {};
+
+      _this.write = function(data, length) {
+
+        if ( (data >>> length) != 0) {
+          throw 'length over';
+        }
+
+        while (_bitLength + length >= 8) {
+          _out.writeByte(0xff & ( (data << _bitLength) | _bitBuffer) );
+          length -= (8 - _bitLength);
+          data >>>= (8 - _bitLength);
+          _bitBuffer = 0;
+          _bitLength = 0;
+        }
+
+        _bitBuffer = (data << _bitLength) | _bitBuffer;
+        _bitLength = _bitLength + length;
+      };
+
+      _this.flush = function() {
+        if (_bitLength > 0) {
+          _out.writeByte(_bitBuffer);
+        }
+      };
+
+      return _this;
+    };
+
+    var getLZWRaster = function(lzwMinCodeSize) {
+
+      var clearCode = 1 << lzwMinCodeSize;
+      var endCode = (1 << lzwMinCodeSize) + 1;
+      var bitLength = lzwMinCodeSize + 1;
+
+      // Setup LZWTable
+      var table = lzwTable();
+
+      for (var i = 0; i < clearCode; i += 1) {
+        table.add(String.fromCharCode(i) );
+      }
+      table.add(String.fromCharCode(clearCode) );
+      table.add(String.fromCharCode(endCode) );
+
+      var byteOut = byteArrayOutputStream();
+      var bitOut = bitOutputStream(byteOut);
+
+      // clear code
+      bitOut.write(clearCode, bitLength);
+
+      var dataIndex = 0;
+
+      var s = String.fromCharCode(_data[dataIndex]);
+      dataIndex += 1;
+
+      while (dataIndex < _data.length) {
+
+        var c = String.fromCharCode(_data[dataIndex]);
+        dataIndex += 1;
+
+        if (table.contains(s + c) ) {
+
+          s = s + c;
+
+        } else {
+
+          bitOut.write(table.indexOf(s), bitLength);
+
+          if (table.size() < 0xfff) {
+
+            if (table.size() == (1 << bitLength) ) {
+              bitLength += 1;
+            }
+
+            table.add(s + c);
+          }
+
+          s = c;
+        }
+      }
+
+      bitOut.write(table.indexOf(s), bitLength);
+
+      // end code
+      bitOut.write(endCode, bitLength);
+
+      bitOut.flush();
+
+      return byteOut.toByteArray();
+    };
+
+    var lzwTable = function() {
+
+      var _map = {};
+      var _size = 0;
+
+      var _this = {};
+
+      _this.add = function(key) {
+        if (_this.contains(key) ) {
+          throw 'dup key:' + key;
+        }
+        _map[key] = _size;
+        _size += 1;
+      };
+
+      _this.size = function() {
+        return _size;
+      };
+
+      _this.indexOf = function(key) {
+        return _map[key];
+      };
+
+      _this.contains = function(key) {
+        return typeof _map[key] != 'undefined';
+      };
+
+      return _this;
+    };
+
+    return _this;
+  };
+
+  var createDataURL = function(width, height, getPixel) {
+    var gif = gifImage(width, height);
+    for (var y = 0; y < height; y += 1) {
+      for (var x = 0; x < width; x += 1) {
+        gif.setPixel(x, y, getPixel(x, y) );
+      }
+    }
+
+    var b = byteArrayOutputStream();
+    gif.write(b);
+
+    var base64 = base64EncodeOutputStream();
+    var bytes = b.toByteArray();
+    for (var i = 0; i < bytes.length; i += 1) {
+      base64.writeByte(bytes[i]);
+    }
+    base64.flush();
+
+    return 'data:image/gif;base64,' + base64;
+  };
+
+  //---------------------------------------------------------------------
+  // returns qrcode function.
+
+  return qrcode;
+}();
+
+// multibyte support
+!function() {
+
+  qrcode.stringToBytesFuncs['UTF-8'] = function(s) {
+    // http://stackoverflow.com/questions/18729405/how-to-convert-utf8-string-to-byte-array
+    function toUTF8Array(str) {
+      var utf8 = [];
+      for (var i=0; i < str.length; i++) {
+        var charcode = str.charCodeAt(i);
+        if (charcode < 0x80) utf8.push(charcode);
+        else if (charcode < 0x800) {
+          utf8.push(0xc0 | (charcode >> 6),
+              0x80 | (charcode & 0x3f));
+        }
+        else if (charcode < 0xd800 || charcode >= 0xe000) {
+          utf8.push(0xe0 | (charcode >> 12),
+              0x80 | ((charcode>>6) & 0x3f),
+              0x80 | (charcode & 0x3f));
+        }
+        // surrogate pair
+        else {
+          i++;
+          // UTF-16 encodes 0x10000-0x10FFFF by
+          // subtracting 0x10000 and splitting the
+          // 20 bits of 0x0-0xFFFFF into two halves
+          charcode = 0x10000 + (((charcode & 0x3ff)<<10)
+            | (str.charCodeAt(i) & 0x3ff));
+          utf8.push(0xf0 | (charcode >>18),
+              0x80 | ((charcode>>12) & 0x3f),
+              0x80 | ((charcode>>6) & 0x3f),
+              0x80 | (charcode & 0x3f));
+        }
+      }
+      return utf8;
+    }
+    return toUTF8Array(s);
+  };
+
+}();
+
+(function (factory) {
+  if (typeof define === 'function' && define.amd) {
+      define([], factory);
+  } else if (typeof exports === 'object') {
+      module.exports = factory();
+  }
+}(function () {
+    return qrcode;
+}));
+
+</script>
+<script>
+/* =====================================================================
+   NIVESA — USDT P2P EXCHANGE (customer app)
+   Live Supabase backend: real auth, RLS-protected data, RPC functions for
+   every balance-moving action, and realtime sync. See supabase-setup.sql.
+   The admin console lives in a separate file (admin-panel.html) — there is
+   only one admin surface, gated by profiles.is_admin in the database.
+   ===================================================================== */
+
+/* ---------------- Supabase client ----------------
    Fill these in from Project Settings -> API in your Supabase dashboard.
-   Only the anon/public key belongs here — never the service_role key.
-   ============================================================ */
+   Only the anon/public key belongs here — never the service_role key. */
 const SUPABASE_URL = 'https://tfgowfihuuacfqlmmkxe.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_I2akurqlHbLEF3ElLiXZnw_LxEDcAct';
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-let sessionAdmin = null; // { id, name, email, role }
-let realtimeChannel = null;
-
-/* ---------------- Nav config ---------------- */
-const NAV_SECTIONS = [
-  { label:'Overview', items:[
-    { key:'dashboard', label:'Dashboard', icon:'grid', title:'Dashboard', sub:'Live snapshot of platform activity' },
-  ]},
-  { label:'Orders', items:[
-    { key:'buy-orders', label:'Buy orders', icon:'arrowDown', title:'Buy orders', sub:'Customers paid INR, waiting on USDT credit' },
-    { key:'sell-orders', label:'Sell orders', icon:'arrowUp', title:'Sell orders', sub:'Customers sent USDT, waiting on INR payout' },
-    { key:'deposits', label:'Deposits', icon:'inbox', title:'Deposits', sub:'Incoming USDT deposits detected on-chain' },
-    { key:'withdrawals', label:'Withdrawals', icon:'send', title:'Withdrawals', sub:'Outgoing USDT withdrawal requests' },
-  ]},
-  { label:'Platform', items:[
-    { key:'users', label:'Users', icon:'users', title:'Users', sub:'All registered customers' },
-    { key:'rates', label:'Rates', icon:'trend', title:'Rates', sub:'Control the buy/sell USDT⇄INR rate shown to customers' },
-    { key:'settings', label:'Settings', icon:'gear', title:'Settings', sub:'Deposit addresses, limits and fees' },
-    { key:'audit-log', label:'Audit log', icon:'clock', title:'Audit log', sub:'Every action taken by admins on the platform' },
-  ]},
+const NETWORKS = [
+  {code:'BEP20', name:'BNB Smart Chain', addr:'0xe2569e77634cCD1571608C7AA2B3103dFB73E843'},
+  {code:'TRC20', name:'Tron', addr:'TTWnofKrLfr199mp26NGKhytxLbTC2nSPyU'},
+  {code:'ETH',   name:'Ethereum', addr:'0xe2569e77634cCD1571608C7AA2B3103dFB73E843'},
+  {code:'SOL',   name:'Solana', addr:'3P7BUDReCmSi5onT4r7qudtPA9guEkwPFjVdUgqAJyvQ'},
 ];
-const FLAT_PAGES = NAV_SECTIONS.flatMap(s => s.items);
 
-const ICONS = {
-  grid:'<svg class="navIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/></svg>',
-  arrowDown:'<svg class="navIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 4v16M6 14l6 6 6-6"/></svg>',
-  arrowUp:'<svg class="navIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20V4M6 10l6-6 6 6"/></svg>',
-  inbox:'<svg class="navIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 12h4l2 3h4l2-3h4"/><path d="M4 12l1.5-6.5A2 2 0 0 1 7.4 4h9.2a2 2 0 0 1 1.9 1.5L20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-6z"/></svg>',
-  send:'<svg class="navIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7z"/></svg>',
-  users:'<svg class="navIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
-  trend:'<svg class="navIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M23 6 13.5 15.5l-5-5L1 18"/><path d="M17 6h6v6"/></svg>',
-  gear:'<svg class="navIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',
-  clock:'<svg class="navIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>',
-  logout:'<svg class="navIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>',
+function fmt(n,d=2){ return Number(n).toLocaleString('en-IN',{minimumFractionDigits:d,maximumFractionDigits:d}); }
+function nowStr(t){ return new Date(t||Date.now()).toLocaleString('en-IN',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}); }
+
+let state = {
+  deposits: [],
+  withdrawals: [],
+  sellOrders: [],
+  buyOrders: [],
+  settings: { rate_mode:'live', live_rate:91.20, margin:{buy:1.5,sell:1.5}, manual_rate:{buy:92.5,sell:90.0}, min_deposit:10, min_withdrawal:20, withdrawal_fee_pct:0.5 },
 };
 
+let currentUser = null; // profile row: {id, name, email, usdt_balance, inr_balance, kyc_status, is_banned}
 let currentPage = 'dashboard';
+let depositNet = 'BEP20';
+let realtimeChannel = null;
 
-/* ---------------- Auth ---------------- */
-document.getElementById('loginForm').addEventListener('submit', async function(e){
-  e.preventDefault();
-  const emailField = document.getElementById('fld_email');
-  const passField = document.getElementById('fld_pass');
-  const email = document.getElementById('li_email').value.trim();
-  const pass = document.getElementById('li_pass').value;
-
-  emailField.classList.toggle('hasErr', !/^\S+@\S+\.\S+$/.test(email));
-  passField.classList.toggle('hasErr', pass.length === 0);
-  if(emailField.classList.contains('hasErr') || passField.classList.contains('hasErr')) return;
-
-  const btn = document.getElementById('loginBtn');
-  btn.disabled = true; btn.textContent = 'Logging in…';
-  try{
-    await AdminAPI.login(email, pass);
-    enterApp();
-  }catch(err){
-    showToast(err.message || 'Login failed.', true);
-  }finally{
-    btn.disabled = false; btn.textContent = 'Log in';
+/* ---------------- rate engine ---------------- */
+function computeRates(){
+  const s = state.settings;
+  if(s.rate_mode === 'live'){
+    return {
+      buy: +(s.live_rate * (1 + s.margin.buy/100)).toFixed(2),
+      sell: +(s.live_rate * (1 - s.margin.sell/100)).toFixed(2),
+    };
   }
-});
-
-async function enterApp(){
-  document.getElementById('authScreen').style.display = 'none';
-  document.getElementById('app').style.display = 'block';
-  renderSidebar();
-  goToPage('dashboard');
-  setupRealtime();
+  return { buy: s.manual_rate.buy, sell: s.manual_rate.sell };
 }
 
-async function doLogout(){
-  await sb.auth.signOut();
-  teardownRealtime();
-  sessionAdmin = null;
-  document.getElementById('app').style.display = 'none';
-  document.getElementById('authScreen').style.display = 'flex';
-  document.getElementById('li_email').value = '';
-  document.getElementById('li_pass').value = '';
+/* ---------------- load state from Supabase ---------------- */
+async function refreshProfile(){
+  const { data, error } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
+  if(!error && data) currentUser = data;
+}
+async function refreshSettings(){
+  const { data } = await sb.from('platform_settings').select('*').eq('id',1).single();
+  if(data){
+    state.settings = {
+      rate_mode:data.rate_mode, live_rate:Number(data.live_rate),
+      margin:{ buy:Number(data.margin_buy_pct), sell:Number(data.margin_sell_pct) },
+      manual_rate:{ buy:Number(data.manual_buy_rate), sell:Number(data.manual_sell_rate) },
+      min_deposit:Number(data.min_deposit), min_withdrawal:Number(data.min_withdrawal), withdrawal_fee_pct:Number(data.withdrawal_fee_pct),
+    };
+  }
+}
+async function refreshOrders(){
+  const [dep, wd, sell, buy] = await Promise.all([
+    sb.from('deposits').select('*').eq('user_id', currentUser.id).order('created_at',{ascending:false}),
+    sb.from('withdrawals').select('*').eq('user_id', currentUser.id).order('created_at',{ascending:false}),
+    sb.from('sell_orders').select('*').eq('user_id', currentUser.id).order('created_at',{ascending:false}),
+    sb.from('buy_orders').select('*').eq('user_id', currentUser.id).order('created_at',{ascending:false}),
+  ]);
+  state.deposits = (dep.data||[]).map(d => ({ id:d.id, user_id:d.user_id, tx_hash:d.tx_hash, network:d.network, amount:Number(d.amount), status:d.status, created_at:nowStr(d.created_at) }));
+  state.withdrawals = (wd.data||[]).map(w => ({ id:w.id, user_id:w.user_id, to_address:w.to_address, network:w.network, amount:Number(w.amount), status:w.status==='completed'?'approved':w.status, created_at:nowStr(w.created_at) }));
+  state.sellOrders = (sell.data||[]).map(s => ({ id:s.id, user_id:s.user_id, usdt_amount:Number(s.usdt_amount), rate:Number(s.rate), inr_amount:Number(s.inr_amount), payout_method:s.payout_method, payout_details:s.payout_details, status:s.status, created_at:nowStr(s.created_at) }));
+  state.buyOrders = (buy.data||[]).map(b => ({ id:b.id, user_id:b.user_id, inr_amount:Number(b.inr_amount), rate:Number(b.rate), usdt_amount:Number(b.usdt_amount), payment_method:b.payment_method, payment_ref:b.payment_ref, status:b.status==='credited'?'verified':b.status, created_at:nowStr(b.created_at) }));
+}
+async function refreshAll(){
+  await Promise.all([refreshProfile(), refreshSettings(), refreshOrders()]);
 }
 
-/* ---------------- Sidebar / navigation ---------------- */
-function getSessionAdmin(){
-  return sessionAdmin || { name:'Admin', role:'Administrator' };
-}
-
-/* ---------------- Restore session on page load ---------------- */
-async function restoreSession(){
-  const { data } = await sb.auth.getSession();
-  if(!data.session) return;
-  const { data: profile, error } = await sb.from('profiles').select('*').eq('id', data.session.user.id).single();
-  if(error || !profile || !profile.is_admin){ await sb.auth.signOut(); return; }
-  sessionAdmin = { id: profile.id, name: profile.name, email: profile.email, role: 'Administrator' };
-  enterApp();
-}
-restoreSession();
-
-/* ---------------- Realtime: keep the open page in sync instantly ---------------- */
-const REALTIME_TABLES = ['deposits','withdrawals','buy_orders','sell_orders','profiles','platform_settings','audit_log'];
+/* ---------------- realtime: reflect admin actions instantly ---------------- */
 function setupRealtime(){
   if(realtimeChannel) return;
-  realtimeChannel = sb.channel('admin-live-updates');
-  REALTIME_TABLES.forEach(table => {
-    realtimeChannel.on('postgres_changes', { event:'*', schema:'public', table }, () => {
-      clearTimeout(realtimeChannel._debounce);
-      realtimeChannel._debounce = setTimeout(() => {
-        const meta = FLAT_PAGES.find(p => p.key === currentPage);
-        if(meta && RENDERERS[currentPage]) RENDERERS[currentPage]();
-      }, 250);
-    });
+  realtimeChannel = sb.channel('customer-live-updates');
+  ['deposits','withdrawals','buy_orders','sell_orders'].forEach(table => {
+    realtimeChannel.on('postgres_changes', { event:'*', schema:'public', table, filter:`user_id=eq.${currentUser.id}` }, onLiveChange);
   });
+  realtimeChannel.on('postgres_changes', { event:'UPDATE', schema:'public', table:'profiles', filter:`id=eq.${currentUser.id}` }, onLiveChange);
+  realtimeChannel.on('postgres_changes', { event:'UPDATE', schema:'public', table:'platform_settings' }, onLiveChange);
   realtimeChannel.subscribe();
 }
 function teardownRealtime(){
   if(realtimeChannel){ sb.removeChannel(realtimeChannel); realtimeChannel = null; }
 }
-
-function renderSidebar(){
-  const mount = document.getElementById('sidebar');
-  const admin = getSessionAdmin();
-  mount.innerHTML = `
-    <div class="sideBrand">
-      <div class="brandMark">N</div>
-      <div><div class="brandName">Nivesa</div><div class="brandSub" style="font-size:9.5px;">ADMIN</div></div>
-    </div>
-    ${NAV_SECTIONS.map(sec => `
-      <div class="navGroup">
-        <div class="navLabel">${sec.label}</div>
-        ${sec.items.map(it => `
-          <button class="navItem" data-page="${it.key}">${ICONS[it.icon]||''}<span>${it.label}</span></button>
-        `).join('')}
-      </div>
-    `).join('')}
-    <div class="sideFoot">
-      <div class="adminBox">
-        <div class="avatar" style="background:var(--gold-bg);color:var(--gold);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;font-family:var(--font-display);">${(admin.name||'A').slice(0,1).toUpperCase()}</div>
-        <div><div class="aname">${admin.name}</div><div class="arole">${admin.role}</div></div>
-      </div>
-      <button class="logoutBtn" onclick="doLogout()">${ICONS.logout} Log out</button>
-    </div>
-  `;
-  mount.querySelectorAll('.navItem').forEach(btn => {
-    btn.addEventListener('click', () => goToPage(btn.dataset.page));
-  });
-  const toggle = document.getElementById('navToggle');
-  toggle.onclick = () => mount.classList.toggle('mobileOpen');
+function onLiveChange(){
+  clearTimeout(onLiveChange._t);
+  onLiveChange._t = setTimeout(async () => {
+    await refreshAll();
+    renderTicker();
+    renderShell();
+  }, 250);
 }
 
-function goToPage(key){
-  currentPage = key;
-  const meta = FLAT_PAGES.find(p => p.key === key);
-  document.getElementById('pageTitle').textContent = meta.title;
-  document.getElementById('pageSub').textContent = meta.sub;
-  document.querySelectorAll('.navItem').forEach(b => b.classList.toggle('active', b.dataset.page === key));
-  RENDERERS[key]();
+/* ---------------- auth ---------------- */
+function setAuthTab(t){
+  document.getElementById('tabLogin').classList.toggle('active', t==='login');
+  document.getElementById('tabSignup').classList.toggle('active', t==='signup');
+  document.getElementById('loginForm').style.display = t==='login' ? 'block':'none';
+  document.getElementById('signupForm').style.display = t==='signup' ? 'block':'none';
 }
-
-/* ---------------- Small render helpers ---------------- */
-function showToast(msg, isErr){
-  let el = document.getElementById('toast');
-  if(!el){ el = document.createElement('div'); el.id='toast'; el.className='toast'; document.body.appendChild(el); }
-  el.textContent = msg;
-  el.className = 'toast show' + (isErr ? ' err' : '');
-  clearTimeout(el._t);
-  el._t = setTimeout(() => el.classList.remove('show'), 3200);
-}
-function openModal(html){
-  let bg = document.getElementById('modalBg');
-  if(!bg){
-    bg = document.createElement('div'); bg.id='modalBg'; bg.className='modalBg';
-    bg.innerHTML = '<div class="modalCard" id="modalCard"></div>';
-    document.body.appendChild(bg);
-    bg.addEventListener('click', (e) => { if(e.target === bg) closeModal(); });
-  }
-  document.getElementById('modalCard').innerHTML = html;
-  bg.classList.add('show');
-}
-function closeModal(){ const bg = document.getElementById('modalBg'); if(bg) bg.classList.remove('show'); }
-
-function statusPill(status){
-  const map = { pending:'gold', paid:'green', credited:'green', approved:'green',
-    rejected:'red', failed:'red', flagged:'red', active:'green', suspended:'red', verified:'green', unverified:'gray' };
-  return `<span class="pill ${map[status]||'gray'}">${status}</span>`;
-}
-function emptyState(title, sub){ return `<div class="emptyRow"><div class="emptyTitle">${title}</div>${sub?`<div>${sub}</div>`:''}</div>`; }
-function tableSkeleton(cols, rows){
-  rows = rows || 5;
-  return Array.from({length:rows}).map(() =>
-    `<tr>${Array.from({length:cols}).map(() => `<td><div class="skeleton" style="height:14px;width:80%;"></div></td>`).join('')}</tr>`
-  ).join('');
-}
-
-/* ============================================================
-   API layer — every call this admin panel needs, as stubs.
-   Replace each body with a real fetch() to your backend.
-   ============================================================ */
-const PAGE_SIZE = 10;
-
-async function logAudit(action, target){
-  // Extra client-side audit rows for actions the RPCs don't already log
-  // (e.g. capturing a tx hash). Permitted by the audit_log_admin_all RLS policy.
-  if(!sessionAdmin) return;
-  await sb.from('audit_log').insert({ admin_id: sessionAdmin.id, action, target: target || null });
-}
-
-const AdminAPI = {
-  async login(email, password){
-    const { data, error } = await sb.auth.signInWithPassword({ email, password });
+async function doLogin(){
+  const email = document.getElementById('li_email').value.trim().toLowerCase();
+  const pass = document.getElementById('li_pass').value;
+  if(!email || !pass){ showToast('Enter your email and password.', true); return; }
+  const btn = document.getElementById('loginBtn');
+  btn.disabled = true; btn.textContent = 'Logging in…';
+  try{
+    const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
     if(error) throw new Error('Invalid email or password.');
     const { data: profile, error: pErr } = await sb.from('profiles').select('*').eq('id', data.user.id).single();
-    if(pErr || !profile){ await sb.auth.signOut(); throw new Error('No profile found for this account.'); }
-    if(!profile.is_admin){ await sb.auth.signOut(); throw new Error('This account does not have admin access.'); }
-    if(profile.is_banned){ await sb.auth.signOut(); throw new Error('This admin account has been suspended.'); }
-    sessionAdmin = { id: profile.id, name: profile.name, email: profile.email, role: 'Administrator' };
-  },
+    if(pErr || !profile) throw new Error('No profile found for this account.');
+    if(profile.is_banned){ await sb.auth.signOut(); throw new Error('This account has been suspended.'); }
+    currentUser = profile;
+    await enterApp();
+  }catch(err){
+    showToast(err.message || 'Login failed.', true);
+  }finally{
+    btn.disabled = false; btn.textContent = 'Log in';
+  }
+}
+async function doSignup(){
+  const name = document.getElementById('su_name').value.trim();
+  const email = document.getElementById('su_email').value.trim().toLowerCase();
+  const pass = document.getElementById('su_pass').value;
+  if(!name || !email || !pass){ showToast('Fill in all fields.', true); return; }
+  const btn = document.getElementById('signupBtn');
+  btn.disabled = true; btn.textContent = 'Creating account…';
+  try{
+    const { data, error } = await sb.auth.signUp({ email, password: pass, options: { data: { name } } });
+    if(error) throw new Error(error.message);
+    if(!data.session){ showToast('Account created. Check your email to confirm, then log in.'); setAuthTab('login'); return; }
+    const { data: profile } = await sb.from('profiles').select('*').eq('id', data.user.id).single();
+    currentUser = profile;
+    showToast('Account created successfully.');
+    await enterApp();
+  }catch(err){
+    showToast(err.message || 'Could not create account.', true);
+  }finally{
+    btn.disabled = false; btn.textContent = 'Create account';
+  }
+}
+async function doLogout(){
+  await sb.auth.signOut();
+  teardownRealtime();
+  currentUser = null;
+  document.getElementById('app').style.display='none';
+  document.getElementById('authScreen').style.display='flex';
+}
+async function enterApp(){
+  await refreshAll();
+  document.getElementById('authScreen').style.display='none';
+  document.getElementById('app').style.display='block';
+  currentPage = 'dashboard';
+  renderTicker();
+  renderShell();
+  setupRealtime();
+}
 
-  async getDashboardStats(){
-    const [users, pendingDep, pendingWd, pendingBuy, pendingSell] = await Promise.all([
-      sb.from('profiles').select('id', { count:'exact', head:true }).eq('is_admin', false),
-      sb.from('deposits').select('id', { count:'exact', head:true }).eq('status','pending'),
-      sb.from('withdrawals').select('id', { count:'exact', head:true }).eq('status','pending'),
-      sb.from('buy_orders').select('id', { count:'exact', head:true }).eq('status','pending'),
-      sb.from('sell_orders').select('id', { count:'exact', head:true }).eq('status','pending'),
-    ]);
-    const since = new Date(Date.now() - 24*60*60*1000).toISOString();
-    const [buyVol, sellVol] = await Promise.all([
-      sb.from('buy_orders').select('inr_amount').gte('created_at', since).neq('status','rejected'),
-      sb.from('sell_orders').select('inr_amount').gte('created_at', since).neq('status','rejected'),
-    ]);
-    const volume = (buyVol.data||[]).reduce((s,r)=>s+Number(r.inr_amount),0) + (sellVol.data||[]).reduce((s,r)=>s+Number(r.inr_amount),0);
+/* ---------------- restore session on page load ---------------- */
+(async function restoreSession(){
+  const { data } = await sb.auth.getSession();
+  if(!data.session) return;
+  const { data: profile, error } = await sb.from('profiles').select('*').eq('id', data.session.user.id).single();
+  if(error || !profile || profile.is_banned){ await sb.auth.signOut(); return; }
+  currentUser = profile;
+  await enterApp();
+})();
 
-    const [dep, wd, buy, sell] = await Promise.all([
-      sb.from('deposits').select('*, profiles(name)').eq('status','pending').order('created_at',{ascending:false}).limit(5),
-      sb.from('withdrawals').select('*, profiles(name)').eq('status','pending').order('created_at',{ascending:false}).limit(5),
-      sb.from('buy_orders').select('*, profiles(name)').eq('status','pending').order('created_at',{ascending:false}).limit(5),
-      sb.from('sell_orders').select('*, profiles(name)').eq('status','pending').order('created_at',{ascending:false}).limit(5),
-    ]);
-    const attention = [
-      ...(dep.data||[]).map(d=>({label:`Deposit — ${d.profiles?.name||'user'} · ${d.amount} USDT`, sub:d.network, page:'deposits'})),
-      ...(wd.data||[]).map(w=>({label:`Withdrawal — ${w.profiles?.name||'user'} · ${w.amount} USDT`, sub:w.network, page:'withdrawals'})),
-      ...(buy.data||[]).map(b=>({label:`Buy order — ${b.profiles?.name||'user'} · ₹${b.inr_amount}`, sub:b.payment_method, page:'buy-orders'})),
-      ...(sell.data||[]).map(s=>({label:`Sell order — ${s.profiles?.name||'user'} · ${s.usdt_amount} USDT`, sub:s.payout_method, page:'sell-orders'})),
-    ];
+/* ---------------- toast / modal ---------------- */
+function showToast(msg, isErr){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (isErr ? ' err':'');
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(()=>{ t.className='toast'; }, 3200);
+}
+function closeModal(){ document.getElementById('modalBg').classList.remove('show'); }
+function openModal(html){
+  document.getElementById('modalCard').innerHTML = html;
+  document.getElementById('modalBg').classList.add('show');
+}
 
-    return {
-      totalUsers: users.count||0,
-      pendingDeposits: pendingDep.count||0,
-      pendingWithdrawals: pendingWd.count||0,
-      pendingBuyOrders: pendingBuy.count||0,
-      pendingSellOrders: pendingSell.count||0,
-      volume24h: volume,
-      attention,
-    };
-  },
+/* ---------------- ticker ---------------- */
+function renderTicker(){
+  const r = computeRates();
+  const items = [
+    `<div class="tickerItem"><span class="dot"></span>BSC (BEP20) <b>Operational</b></div>`,
+    `<div class="tickerItem"><span class="dot"></span>Tron (TRC20) <b>Operational</b></div>`,
+    `<div class="tickerItem"><span class="dot"></span>Ethereum <b>Operational</b></div>`,
+    `<div class="tickerItem"><span class="dot"></span>Solana <b>Operational</b></div>`,
+    `<div class="tickerItem"><span class="dot gold"></span>BUY <b>₹${fmt(r.buy)}</b> / USDT</div>`,
+    `<div class="tickerItem"><span class="dot gold"></span>SELL <b>₹${fmt(r.sell)}</b> / USDT</div>`,
+    `<div class="tickerItem"><span class="dot"></span>Rate mode <b>${state.settings.rate_mode.toUpperCase()}</b></div>`,
+  ];
+  document.getElementById('tickerTrack').innerHTML = items.join('') + items.join('');
+}
 
-  async listUsers(params){
-    let q = sb.from('profiles').select('*', { count:'exact' }).eq('is_admin', false);
-    if(params.query){ q = q.or(`name.ilike.%${params.query}%,email.ilike.%${params.query}%`); }
-    if(params.status === 'active') q = q.eq('is_banned', false);
-    if(params.status === 'suspended') q = q.eq('is_banned', true);
-    if(params.status === 'unverified') q = q.neq('kyc_status', 'verified');
-    const from = (params.page-1) * PAGE_SIZE, to = from + PAGE_SIZE - 1;
-    const { data, count, error } = await q.order('created_at',{ascending:false}).range(from, to);
-    if(error) throw new Error(error.message);
-    const rows = (data||[]).map(u => ({
-      id:u.id, name:u.name, email:u.email, usdt_balance:Number(u.usdt_balance).toFixed(4),
-      kyc_status:u.kyc_status, status:u.is_banned?'suspended':'active',
-      joined_at:new Date(u.created_at).toLocaleDateString('en-IN'),
-    }));
-    return { rows, total: count||0 };
-  },
-  async setUserStatus(id, status){
-    const { error } = await sb.from('profiles').update({ is_banned: status==='suspended' }).eq('id', id);
-    if(error) throw new Error(error.message);
-    await logAudit(`${status==='suspended'?'Suspended':'Reactivated'} user`, id);
-  },
-
-  async listDeposits(params){
-    let q = sb.from('deposits').select('*, profiles(name)');
-    if(params.status) q = q.eq('status', params.status);
-    const { data, error } = await q.order('created_at',{ascending:false}).limit(100);
-    if(error) throw new Error(error.message);
-    const rows = (data||[]).map(d => ({
-      id:d.id, user_name:d.profiles?.name||'—', network:d.network, amount:Number(d.amount).toFixed(4),
-      tx_hash:d.tx_hash, status:d.status, detected_at:new Date(d.created_at).toLocaleString('en-IN'),
-    }));
-    return { rows, total: rows.length };
-  },
-  async confirmDeposit(id){
-    const { error } = await sb.rpc('admin_verify_deposit', { p_deposit_id: id });
-    if(error) throw new Error(error.message);
-  },
-  async rejectDeposit(id){
-    const { error } = await sb.rpc('admin_reject_deposit', { p_deposit_id: id });
-    if(error) throw new Error(error.message);
-  },
-
-  async listWithdrawals(params){
-    let q = sb.from('withdrawals').select('*, profiles(name)');
-    if(params.status) q = q.eq('status', params.status);
-    const { data, error } = await q.order('created_at',{ascending:false}).limit(100);
-    if(error) throw new Error(error.message);
-    const rows = (data||[]).map(w => ({
-      id:w.id, user_name:w.profiles?.name||'—', network:w.network, amount:Number(w.amount).toFixed(4),
-      fee:Number(w.fee).toFixed(4), address:w.to_address, status:w.status==='completed'?'approved':w.status,
-      requested_at:new Date(w.created_at).toLocaleString('en-IN'),
-    }));
-    return { rows, total: rows.length };
-  },
-  async approveWithdrawal(id, txHash){
-    const { error } = await sb.rpc('admin_approve_withdrawal', { p_withdrawal_id: id });
-    if(error) throw new Error(error.message);
-    if(txHash) await logAudit(`Recorded withdrawal tx hash ${txHash}`, id);
-  },
-  async rejectWithdrawal(id){
-    const { error } = await sb.rpc('admin_reject_withdrawal', { p_withdrawal_id: id });
-    if(error) throw new Error(error.message);
-  },
-
-  async listBuyOrders(params){
-    const { data, error } = await sb.from('buy_orders').select('*, profiles(name)').order('created_at',{ascending:false}).limit(100);
-    if(error) throw new Error(error.message);
-    const rows = (data||[]).map(o => ({
-      id:o.id, user_name:o.profiles?.name||'—', inr_amount:Number(o.inr_amount).toFixed(2),
-      usdt_amount:Number(o.usdt_amount).toFixed(4), payment_method:o.payment_method,
-      payment_ref:o.payment_ref, status:o.status,
-    }));
-    return { rows, total: rows.length };
-  },
-  async verifyBuyOrder(id){
-    const { error } = await sb.rpc('admin_verify_buy_order', { p_order_id: id });
-    if(error) throw new Error(error.message);
-  },
-  async rejectBuyOrder(id){
-    const { error } = await sb.rpc('admin_reject_buy_order', { p_order_id: id });
-    if(error) throw new Error(error.message);
-  },
-
-  async listSellOrders(params){
-    const { data, error } = await sb.from('sell_orders').select('*, profiles(name)').order('created_at',{ascending:false}).limit(100);
-    if(error) throw new Error(error.message);
-    const rows = (data||[]).map(o => ({
-      id:o.id, user_name:o.profiles?.name||'—', usdt_amount:Number(o.usdt_amount).toFixed(4),
-      inr_amount:Number(o.inr_amount).toFixed(2),
-      payout_details: o.payout_details?.upi_id || o.payout_details?.account_number || JSON.stringify(o.payout_details||{}),
-      status:o.status,
-    }));
-    return { rows, total: rows.length };
-  },
-  async markSellPaid(id, utr){
-    const { error } = await sb.rpc('admin_confirm_sell_paid', { p_order_id: id, p_utr: utr });
-    if(error) throw new Error(error.message);
-  },
-  async rejectSellOrder(id){
-    const { error } = await sb.rpc('admin_reject_sell_order', { p_order_id: id });
-    if(error) throw new Error(error.message);
-  },
-
-  async getRateSettings(){
-    const { data, error } = await sb.from('platform_settings').select('*').eq('id',1).single();
-    if(error || !data) return null;
-    const buy = data.rate_mode==='live' ? +(data.live_rate*(1+data.margin_buy_pct/100)).toFixed(2) : data.manual_buy_rate;
-    const sell = data.rate_mode==='live' ? +(data.live_rate*(1-data.margin_sell_pct/100)).toFixed(2) : data.manual_sell_rate;
-    return {
-      live_rate:data.live_rate, buy, sell, rate_mode:data.rate_mode,
-      margin:{ buy:data.margin_buy_pct, sell:data.margin_sell_pct },
-      manual_rate:{ buy:data.manual_buy_rate, sell:data.manual_sell_rate },
-    };
-  },
-  async setRateMode(mode){
-    const { error } = await sb.from('platform_settings').update({ rate_mode: mode }).eq('id',1);
-    if(error) throw new Error(error.message);
-    await logAudit(`Switched rate mode to ${mode.toUpperCase()}`, 'settings');
-  },
-  async saveMargins(buy, sell){
-    const { error } = await sb.from('platform_settings').update({ margin_buy_pct: buy, margin_sell_pct: sell }).eq('id',1);
-    if(error) throw new Error(error.message);
-    await logAudit(`Updated margins — buy ${buy}% / sell ${sell}%`, 'settings');
-  },
-  async saveManualRates(buy, sell){
-    const { error } = await sb.from('platform_settings').update({ manual_buy_rate: buy, manual_sell_rate: sell }).eq('id',1);
-    if(error) throw new Error(error.message);
-    await logAudit(`Updated manual rates — buy ₹${buy} / sell ₹${sell}`, 'settings');
-  },
-
-  async getSettings(){
-    const [settingsRes, addrRes] = await Promise.all([
-      sb.from('platform_settings').select('*').eq('id',1).single(),
-      sb.from('deposit_addresses').select('*').order('network'),
-    ]);
-    if(settingsRes.error || !settingsRes.data) return null;
-    const s = settingsRes.data;
-    return {
-      min_deposit:s.min_deposit, min_withdrawal:s.min_withdrawal, withdrawal_fee_pct:s.withdrawal_fee_pct,
-      networks: (addrRes.data||[]).map(n => ({ code:n.network, name:n.name, addr:n.address })),
-    };
-  },
-  async saveSettings(payload){
-    const { error } = await sb.from('platform_settings').update({
-      min_deposit: payload.min_deposit, min_withdrawal: payload.min_withdrawal, withdrawal_fee_pct: payload.withdrawal_fee_pct,
-    }).eq('id',1);
-    if(error) throw new Error(error.message);
-    const addrInputs = document.querySelectorAll('#addressesBody input[data-network]');
-    for(const input of addrInputs){
-      await sb.from('deposit_addresses').update({ address: input.value.trim() }).eq('network', input.dataset.network);
-    }
-    await logAudit('Updated platform limits, fees and deposit addresses', 'settings');
-  },
-
-  async listAuditLog(params){
-    const { data, error } = await sb.from('audit_log').select('*, profiles(name)').order('created_at',{ascending:false}).limit(100);
-    if(error) throw new Error(error.message);
-    const rows = (data||[]).map(l => ({
-      admin: l.profiles?.name || 'Admin', action: l.action, time: new Date(l.created_at).toLocaleString('en-IN'),
-    }));
-    return { rows, total: rows.length };
-  },
+/* ---------------- nav config ---------------- */
+const CUSTOMER_NAV = [
+  {id:'dashboard', label:'Dashboard', icon:'grid'},
+  {id:'deposit', label:'Deposit', icon:'down'},
+  {id:'withdraw', label:'Withdraw', icon:'up'},
+  {id:'buy', label:'Buy USDT', icon:'plus'},
+  {id:'sell', label:'Sell USDT', icon:'minus'},
+  {id:'history', label:'History', icon:'clock'},
+];
+const ICONS = {
+  grid:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>',
+  down:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 4v14M6 12l6 6 6-6"/></svg>',
+  up:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20V6M6 12l6-6 6 6"/></svg>',
+  plus:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 5v14M5 12h14"/></svg>',
+  minus:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 12h14"/></svg>',
+  clock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>',
+  users:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3.2"/><path d="M2.5 20c0-3.6 3-6 6.5-6s6.5 2.4 6.5 6M16 8.5a3 3 0 110 5.8M17.5 14c2.6.4 4 2 4 5"/></svg>',
+  chart:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19h16M7 19v-6M12 19V6M17 19v-10"/></svg>',
+  gear:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 00-.1-1.2l2-1.5-2-3.4-2.3.9a7 7 0 00-2-1.2L14 3h-4l-.4 2.6a7 7 0 00-2 1.2l-2.3-.9-2 3.4 2 1.5A7 7 0 005 12c0 .4 0 .8.1 1.2l-2 1.5 2 3.4 2.3-.9c.6.5 1.3.9 2 1.2L10 21h4l.4-2.6a7 7 0 002-1.2l2.3.9 2-3.4-2-1.5c.1-.4.1-.8.1-1.2z"/></svg>',
 };
 
-/* ============================================================
-   Page renderers — one function per nav item, all mounting into #pageContent
-   ============================================================ */
-const RENDERERS = {
+function renderShell(){
+  document.getElementById('navGroup').innerHTML =
+    '<div class="navLabel">My account</div>' +
+    CUSTOMER_NAV.map(n => `<button class="navItem ${currentPage===n.id?'active':''}" onclick="goTo('${n.id}')"><span class="navIcon">${ICONS[n.icon]}</span>${n.label}</button>`).join('');
 
-  async dashboard(){
-    const el = document.getElementById('pageContent');
-    el.innerHTML = `
-      <div class="cardGrid" id="statCards">
-        ${['Total users','Pending deposits','Pending withdrawals','Pending buy orders','Pending sell orders','24h volume']
-          .map(l => `<div class="card"><div class="clabel">${l}</div><div class="cval"><div class="skeleton" style="height:25px;width:60px;"></div></div></div>`).join('')}
-      </div>
-      <div class="panel">
-        <div class="panelHead"><div><h3>Needs attention</h3><div class="sub">Items waiting on admin action across the platform</div></div></div>
-        <div class="panelBody" id="attentionBody"></div>
-      </div>
-    `;
-    const stats = await AdminAPI.getDashboardStats();
-    const cards = document.getElementById('statCards');
-    const body = document.getElementById('attentionBody');
-    if(!stats){
-      cards.innerHTML = ['Total users','Pending deposits','Pending withdrawals','Pending buy orders','Pending sell orders','24h volume']
-        .map(l => `<div class="card"><div class="clabel">${l}</div><div class="cval">—</div></div>`).join('');
-      body.innerHTML = emptyState('Nothing needs attention right now');
-      return;
-    }
-    cards.innerHTML = `
-      <div class="card"><div class="clabel">Total users</div><div class="cval">${stats.totalUsers}</div></div>
-      <div class="card"><div class="clabel">Pending deposits</div><div class="cval">${stats.pendingDeposits}</div></div>
-      <div class="card"><div class="clabel">Pending withdrawals</div><div class="cval">${stats.pendingWithdrawals}</div></div>
-      <div class="card"><div class="clabel">Pending buy orders</div><div class="cval">${stats.pendingBuyOrders}</div></div>
-      <div class="card"><div class="clabel">Pending sell orders</div><div class="cval">${stats.pendingSellOrders}</div></div>
-      <div class="card"><div class="clabel">24h volume</div><div class="cval">₹${Number(stats.volume24h).toLocaleString('en-IN')}</div></div>
-    `;
-    body.innerHTML = stats.attention.length ? stats.attention.map(a => `
-      <div class="filterBar" style="justify-content:space-between;margin-bottom:0;padding:10px 0;border-bottom:1px solid var(--line-soft);">
-        <div><div style="font-size:13px;">${a.label}</div><div class="csub">${a.sub||''}</div></div>
-        <button class="btnGhost" onclick="goToPage('${a.page}')">Review</button>
-      </div>
-    `).join('') : emptyState('Nothing needs attention right now');
-  },
+  document.getElementById('roleSwitchBox').innerHTML = '';
 
-  async users(){
-    const el = document.getElementById('pageContent');
-    el.innerHTML = `
-      <div class="panel">
-        <div class="panelBody" style="padding-bottom:0;">
-          <div class="filterBar">
-            <input type="search" id="q" placeholder="Search name or email…">
-            <select id="statusFilter">
-              <option value="">All statuses</option>
-              <option value="active">Active</option>
-              <option value="suspended">Suspended</option>
-              <option value="unverified">Unverified KYC</option>
-            </select>
-            <button class="btnGhost" id="filterBtn">Filter</button>
+  document.getElementById('avatarInit').textContent = currentUser.name.charAt(0);
+  document.getElementById('userBadgeName').textContent = currentUser.name;
+  document.getElementById('userBadgeRole').textContent = 'KYC verified';
+  renderPage();
+}
+function goTo(page){ currentPage = page; renderShell(); }
+
+/* ---------------- QR helper ---------------- */
+function qrDataUrl(text){
+  try{
+    const qr = qrcode(0, 'M');
+    qr.addData(text);
+    qr.make();
+    return qr.createDataURL(6, 8);
+  }catch(e){
+    return null;
+  }
+}
+
+/* ---------------- helpers for lookups ---------------- */
+function statusPill(status){
+  const map = {
+    pending:'gold', processing:'gold', verified:'green', paid:'green', completed:'green',
+    approved:'green', credited:'green', rejected:'red', banned:'red'
+  };
+  return `<span class="pill ${map[status]||'gray'}">${status.toUpperCase()}</span>`;
+}
+
+/* =====================================================================
+   PAGE RENDERERS
+   ===================================================================== */
+function renderPage(){
+  const titleMap = {
+    dashboard:['Dashboard','Your balances and recent activity'],
+    deposit:['Deposit USDT','Send USDT from any supported network'],
+    withdraw:['Withdraw USDT','Send USDT to an external wallet'],
+    buy:['Buy USDT','Pay INR, receive USDT to your balance'],
+    sell:['Sell USDT','Convert your USDT balance to INR'],
+    history:['Transaction history','Every deposit, withdrawal, buy and sell order'],
+  };
+  document.getElementById('pageTitle').textContent = titleMap[currentPage][0];
+  document.getElementById('pageSub').textContent = titleMap[currentPage][1];
+  const c = document.getElementById('pageContent');
+  const renderers = {
+    dashboard:renderDashboard, deposit:renderDeposit, withdraw:renderWithdraw, buy:renderBuy, sell:renderSell, history:renderHistory,
+  };
+  c.innerHTML = '';
+  renderers[currentPage]();
+}
+
+/* ---------- CUSTOMER: dashboard ---------- */
+function renderDashboard(){
+  const u = currentUser;
+  const r = computeRates();
+  const myDeposits = state.deposits.filter(d=>d.user_id===u.id);
+  const myWithdrawals = state.withdrawals.filter(d=>d.user_id===u.id);
+  const mySell = state.sellOrders.filter(d=>d.user_id===u.id);
+  const myBuy = state.buyOrders.filter(d=>d.user_id===u.id);
+  const activity = [
+    ...myDeposits.map(x=>({type:'Deposit', amount:`+${fmt(x.amount,2)} USDT`, status:x.status, time:x.created_at})),
+    ...myWithdrawals.map(x=>({type:'Withdrawal', amount:`-${fmt(x.amount,2)} USDT`, status:x.status, time:x.created_at})),
+    ...mySell.map(x=>({type:'Sell order', amount:`-${fmt(x.usdt_amount,2)} USDT → ₹${fmt(x.inr_amount,0)}`, status:x.status, time:x.created_at})),
+    ...myBuy.map(x=>({type:'Buy order', amount:`₹${fmt(x.inr_amount,0)} → +${fmt(x.usdt_amount,2)} USDT`, status:x.status, time:x.created_at})),
+  ].reverse();
+
+  document.getElementById('pageContent').innerHTML = `
+    <div class="cardGrid">
+      <div class="card">
+        <div class="clabel">USDT Balance ${statusPill(u.kyc_status)}</div>
+        <div class="cval">${fmt(u.usdt_balance,2)} <span>USDT</span></div>
+        <div class="csub">≈ ₹${fmt(u.usdt_balance*r.sell,0)} at current sell rate</div>
+      </div>
+      <div class="card">
+        <div class="clabel">INR Balance</div>
+        <div class="cval">₹${fmt(u.inr_balance,0)}</div>
+        <div class="csub">Available for USDT purchase</div>
+      </div>
+      <div class="card">
+        <div class="clabel">Buy rate</div>
+        <div class="cval" style="color:var(--gold);">₹${fmt(r.buy)}</div>
+        <div class="csub">per USDT · ${state.settings.rate_mode} mode</div>
+      </div>
+      <div class="card">
+        <div class="clabel">Sell rate</div>
+        <div class="cval" style="color:var(--tether);">₹${fmt(r.sell)}</div>
+        <div class="csub">per USDT · ${state.settings.rate_mode} mode</div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panelHead"><div><h3>Recent activity</h3><div class="sub">Your last transactions across the platform</div></div></div>
+      <div class="panelBody" style="padding:0;">
+        <table>
+          <thead><tr><th>Type</th><th>Amount</th><th>Status</th><th>Time</th></tr></thead>
+          <tbody>
+            ${activity.length ? activity.map(a=>`<tr><td>${a.type}</td><td>${a.amount}</td><td>${statusPill(a.status)}</td><td class="mono">${a.time}</td></tr>`).join('') : `<tr><td colspan="4"><div class="emptyRow">No activity yet — make a deposit or place an order to get started.</div></td></tr>`}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="trustRow">
+      <div class="trustItem">${trustIcon()} Balances reconciled against on-chain wallet daily</div>
+      <div class="trustItem">${trustIcon()} Withdrawals require manual admin review</div>
+      <div class="trustItem">${trustIcon()} Every admin action is logged and auditable</div>
+    </div>
+  `;
+}
+function trustIcon(){ return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3z"/><path d="M9 12l2 2 4-4"/></svg>'; }
+
+/* ---------- CUSTOMER: deposit ---------- */
+function renderDeposit(){
+  const net = NETWORKS.find(n=>n.code===depositNet);
+  document.getElementById('pageContent').innerHTML = `
+    <div class="warnBox">Send only USDT on the selected network to this address. Sending any other asset, or using the wrong network, will result in permanent loss of funds. Minimum deposit: ${state.settings.min_deposit} USDT.</div>
+    <div class="netGrid">
+      ${NETWORKS.map(n=>`<div class="netCard ${n.code===depositNet?'active':''}" onclick="setDepositNet('${n.code}')"><div class="nname">${n.code}</div><div class="ncode">${n.name}</div></div>`).join('')}
+    </div>
+    <div class="panel">
+      <div class="panelBody">
+        <div class="qrRow">
+          <div class="qrBox">
+            <img src="${qrDataUrl(net.addr)}" alt="QR code for ${net.code} deposit address" width="168" height="168">
+          </div>
+          <div class="qrSide">
+            <div class="addrBox" style="margin-bottom:10px;">
+              <div>
+                <div style="font-size:11px;color:var(--text-faint);margin-bottom:5px;">Platform deposit address · ${net.code} (${net.name})</div>
+                <div class="addr">${net.addr}</div>
+              </div>
+              <button class="copyBtn" onclick="copyAddr('${net.addr}')">Copy</button>
+            </div>
+            <div class="hint">Scan this QR with your wallet app, or copy the address. It's the same for every user — funds are tracked internally by matching your submitted TXID.</div>
           </div>
         </div>
-        <div class="panelBody flush">
-          <table><thead><tr><th>Name</th><th>Email</th><th>USDT balance</th><th>KYC</th><th>Status</th><th>Joined</th><th>Actions</th></tr></thead>
-          <tbody id="usersBody"></tbody></table>
+        <div class="formGrid single">
+          <div class="field"><label>Transaction ID (TXID)</label><input id="dep_txid" placeholder="Paste your transaction hash"></div>
+          <div class="field"><label>Amount sent (USDT)</label><input id="dep_amount" type="number" placeholder="0.00"></div>
         </div>
-        <div class="tableFoot">
-          <span id="usersCount">—</span>
-          <div class="pager"><button id="prevPage">Prev</button><button id="nextPage">Next</button></div>
+        <button class="btnPrimary" style="max-width:220px;" onclick="submitDeposit()">Submit for verification</button>
+        <div class="hint" style="margin-top:10px;">An admin matches your TXID against the ${net.code} network and credits your balance once confirmed. This usually takes a few minutes.</div>
+      </div>
+    </div>
+  `;
+}
+function setDepositNet(code){ depositNet = code; renderPage(); }
+function copyAddr(a){
+  navigator.clipboard?.writeText(a).catch(()=>{});
+  showToast('Address copied to clipboard.');
+}
+async function submitDeposit(){
+  const txid = document.getElementById('dep_txid').value.trim();
+  const amount = parseFloat(document.getElementById('dep_amount').value);
+  if(!txid){ showToast('Enter the transaction ID.', true); return; }
+  if(!amount || amount <= 0){ showToast('Enter a valid amount.', true); return; }
+  if(amount < state.settings.min_deposit){ showToast(`Minimum deposit is ${state.settings.min_deposit} USDT.`, true); return; }
+  const { error } = await sb.rpc('report_deposit', { p_network: depositNet, p_tx_hash: txid, p_amount: amount });
+  if(error){ showToast(error.message.includes('duplicate') ? 'This transaction ID has already been submitted.' : error.message, true); return; }
+  showToast('Deposit submitted. Awaiting admin verification.');
+  await refreshOrders();
+  renderPage();
+}
+
+/* ---------- CUSTOMER: withdraw ---------- */
+function renderWithdraw(){
+  const u = currentUser;
+  document.getElementById('pageContent').innerHTML = `
+    <div class="warnBox">Withdrawals are reviewed manually before funds are sent, which may take some time. Double-check your destination address — transactions on-chain cannot be reversed.</div>
+    <div class="cardGrid" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr));margin-bottom:20px;">
+      <div class="card"><div class="clabel">Available balance</div><div class="cval">${fmt(u.usdt_balance,2)} <span>USDT</span></div></div>
+      <div class="card"><div class="clabel">Withdrawal fee</div><div class="cval">${state.settings.withdrawal_fee_pct}<span>%</span></div></div>
+      <div class="card"><div class="clabel">Minimum withdrawal</div><div class="cval">${state.settings.min_withdrawal}<span>USDT</span></div></div>
+    </div>
+    <div class="panel"><div class="panelBody">
+      <div class="formGrid single">
+        <div class="field"><label>Network</label>
+          <select id="wd_network">${NETWORKS.map(n=>`<option value="${n.code}">${n.code} — ${n.name}</option>`).join('')}</select>
         </div>
+        <div class="field"><label>Destination wallet address</label><input id="wd_address" placeholder="Paste your external wallet address"></div>
+        <div class="field"><label>Amount (USDT)</label><input id="wd_amount" type="number" placeholder="0.00"></div>
       </div>
-    `;
-    let page = 1;
-    async function load(){
-      const body = document.getElementById('usersBody');
-      body.innerHTML = tableSkeleton(7, 5);
-      const { rows, total } = await AdminAPI.listUsers({
-        query: document.getElementById('q').value.trim(),
-        status: document.getElementById('statusFilter').value,
-        page,
-      });
-      document.getElementById('usersCount').textContent = total ? `${total} users` : 'Not connected';
-      document.getElementById('prevPage').disabled = page <= 1;
-      document.getElementById('nextPage').disabled = rows.length === 0;
-      if(!rows.length){
-        body.innerHTML = `<tr><td colspan="7">${emptyState('No users to show', 'Connect AdminAPI.listUsers() to your backend to see real customers here.')}</td></tr>`;
-        return;
-      }
-      body.innerHTML = rows.map(u => `
-        <tr><td>${u.name}</td><td class="mono">${u.email}</td><td>${u.usdt_balance}</td><td>${statusPill(u.kyc_status)}</td><td>${statusPill(u.status)}</td><td class="mono">${u.joined_at}</td>
-        <td>${u.status==='active' ? `<button class="btnMini reject" onclick="setUserStatus('${u.id}','suspended')">Suspend</button>` : `<button class="btnMini approve" onclick="setUserStatus('${u.id}','active')">Reactivate</button>`}</td></tr>
-      `).join('');
-    }
-    window.setUserStatus = async (id, status) => { await AdminAPI.setUserStatus(id, status); showToast(status==='active'?'User reactivated.':'User suspended.'); load(); };
-    document.getElementById('filterBtn').onclick = () => { page = 1; load(); };
-    document.getElementById('prevPage').onclick = () => { page = Math.max(1, page-1); load(); };
-    document.getElementById('nextPage').onclick = () => { page += 1; load(); };
-    load();
-  },
+      <button class="btnPrimary" style="max-width:220px;" onclick="submitWithdraw()">Request withdrawal</button>
+    </div></div>
+  `;
+}
+async function submitWithdraw(){
+  const network = document.getElementById('wd_network').value;
+  const address = document.getElementById('wd_address').value.trim();
+  const amount = parseFloat(document.getElementById('wd_amount').value);
+  const u = currentUser;
+  if(!address){ showToast('Enter a destination address.', true); return; }
+  if(!amount || amount<=0){ showToast('Enter a valid amount.', true); return; }
+  if(amount < state.settings.min_withdrawal){ showToast(`Minimum withdrawal is ${state.settings.min_withdrawal} USDT.`, true); return; }
+  if(amount > u.usdt_balance){ showToast('Insufficient balance.', true); return; }
+  const { error } = await sb.rpc('request_withdrawal', { p_network: network, p_to_address: address, p_amount: amount });
+  if(error){ showToast(error.message, true); return; }
+  showToast('Withdrawal requested. Funds are locked pending admin approval.');
+  await refreshAll();
+  renderPage();
+}
 
-  async deposits(){
-    const el = document.getElementById('pageContent');
-    el.innerHTML = `
-      <div class="toggleRow" id="statusToggle">
-        <button class="active" data-v="">All</button><button data-v="pending">Pending</button><button data-v="credited">Credited</button><button data-v="rejected">Rejected</button>
+/* ---------- CUSTOMER: buy ---------- */
+function renderBuy(){
+  const r = computeRates();
+  document.getElementById('pageContent').innerHTML = `
+    <div class="rateDisplay"><div class="rlabel">Current buy rate</div><div class="rval">₹${fmt(r.buy)} / USDT</div></div>
+    <div class="panel"><div class="panelBody">
+      <div class="formGrid single">
+        <div class="field"><label>INR amount to pay</label><input id="buy_inr" type="number" placeholder="0" oninput="updateBuyCalc()"></div>
       </div>
-      <div class="panel"><div class="panelBody flush">
-        <table><thead><tr><th>User</th><th>Network</th><th>Amount (USDT)</th><th>Tx hash</th><th>Status</th><th>Detected</th><th>Actions</th></tr></thead>
-        <tbody id="depositsBody"></tbody></table>
-      </div></div>
-    `;
-    let status = '';
-    async function load(){
-      const body = document.getElementById('depositsBody');
-      body.innerHTML = tableSkeleton(7, 5);
-      const { rows } = await AdminAPI.listDeposits({ status });
-      if(!rows.length){ body.innerHTML = `<tr><td colspan="7">${emptyState('No deposits to show', 'Connect AdminAPI.listDeposits() to see incoming on-chain deposits here.')}</td></tr>`; return; }
-      body.innerHTML = rows.map(d => `
-        <tr><td>${d.user_name}</td><td>${d.network}</td><td>${d.amount}</td><td class="mono">${d.tx_hash}</td><td>${statusPill(d.status)}</td><td class="mono">${d.detected_at}</td>
-        <td>${d.status==='pending' ? `<button class="btnMini approve" onclick="confirmDeposit('${d.id}')">Confirm & credit</button><button class="btnMini reject" onclick="rejectDeposit('${d.id}')">Reject</button>` : '—'}</td></tr>
-      `).join('');
-    }
-    window.confirmDeposit = async (id) => { await AdminAPI.confirmDeposit(id); showToast('Deposit confirmed and credited.'); load(); };
-    window.rejectDeposit = async (id) => { await AdminAPI.rejectDeposit(id); showToast('Deposit rejected.'); load(); };
-    document.getElementById('statusToggle').addEventListener('click', (e) => {
-      const btn = e.target.closest('button'); if(!btn) return;
-      document.querySelectorAll('#statusToggle button').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active'); status = btn.dataset.v; load();
-    });
-    load();
-  },
+      <div class="calcOut"><div class="clab">You receive</div><div class="cnum" id="buyCalcOut">0.00 USDT</div></div>
+      <div class="field" style="margin-top:14px;"><label>UTR / reference number (after payment)</label><input id="buy_utr" placeholder="e.g. 348219004521"></div>
+      <div class="hint" id="buyHint"></div>
+      <button class="btnPrimary" style="max-width:220px;margin-top:16px;" onclick="submitBuy()">Submit buy order</button>
+    </div></div>
+  `;
+  updateBuyCalc();
+}
+function updateBuyCalc(){
+  const r = computeRates();
+  const inr = parseFloat(document.getElementById('buy_inr').value) || 0;
+  document.getElementById('buyCalcOut').textContent = fmt(inr / r.buy, 4) + ' USDT';
+  document.getElementById('buyHint').textContent = `Pay ₹${fmt(inr,0)} to the platform UPI ID nivesa@upi, then submit the UTR for verification.`;
+}
+async function submitBuy(){
+  const r = computeRates();
+  const inr = parseFloat(document.getElementById('buy_inr').value);
+  const utr = document.getElementById('buy_utr').value.trim();
+  if(!inr || inr<=0){ showToast('Enter an amount.', true); return; }
+  if(!utr){ showToast('Enter the UTR / reference number.', true); return; }
+  const { error } = await sb.rpc('request_buy_order', { p_inr_amount: inr, p_payment_method: 'manual_upi', p_payment_ref: utr });
+  if(error){ showToast(error.message, true); return; }
+  showToast('Buy order submitted. Awaiting admin verification of your payment.');
+  await refreshOrders();
+  renderPage();
+}
 
-  async withdrawals(){
-    const el = document.getElementById('pageContent');
-    el.innerHTML = `
-      <div class="toggleRow" id="statusToggle">
-        <button class="active" data-v="">All</button><button data-v="pending">Pending</button><button data-v="approved">Approved</button><button data-v="rejected">Rejected</button>
-      </div>
-      <div class="panel"><div class="panelBody flush">
-        <table><thead><tr><th>User</th><th>Network</th><th>Amount</th><th>Fee</th><th>Destination address</th><th>Status</th><th>Requested</th><th>Actions</th></tr></thead>
-        <tbody id="wdBody"></tbody></table>
-      </div></div>
-    `;
-    let status = '';
-    async function load(){
-      const body = document.getElementById('wdBody');
-      body.innerHTML = tableSkeleton(8, 5);
-      const { rows } = await AdminAPI.listWithdrawals({ status });
-      if(!rows.length){ body.innerHTML = `<tr><td colspan="8">${emptyState('No withdrawals to show', 'Connect AdminAPI.listWithdrawals() to see requests here.')}</td></tr>`; return; }
-      body.innerHTML = rows.map(w => `
-        <tr><td>${w.user_name}</td><td>${w.network}</td><td>${w.amount}</td><td>${w.fee}</td><td class="mono">${w.address}</td><td>${statusPill(w.status)}</td><td class="mono">${w.requested_at}</td>
-        <td>${w.status==='pending' ? `<button class="btnMini approve" onclick="openApprove('${w.id}')">Approve</button><button class="btnMini reject" onclick="rejectWithdrawal('${w.id}')">Reject</button>` : '—'}</td></tr>
-      `).join('');
-    }
-    window.openApprove = (id) => {
-      openModal(`
-        <h3>Approve withdrawal</h3>
-        <div class="field"><label>Transaction hash</label><input id="txh" type="text" placeholder="0x…"></div>
-        <div class="btnRow"><button class="btnPrimary" onclick="approveWithdrawal('${id}')">Confirm approval</button><button class="btnGhost" onclick="closeModal()">Cancel</button></div>
-      `);
-    };
-    window.approveWithdrawal = async (id) => {
-      const tx = document.getElementById('txh').value.trim();
-      if(!tx){ showToast('Enter the transaction hash.', true); return; }
-      await AdminAPI.approveWithdrawal(id, tx); closeModal(); showToast('Withdrawal approved.'); load();
-    };
-    window.rejectWithdrawal = async (id) => { await AdminAPI.rejectWithdrawal(id); showToast('Withdrawal rejected, balance restored.'); load(); };
-    document.getElementById('statusToggle').addEventListener('click', (e) => {
-      const btn = e.target.closest('button'); if(!btn) return;
-      document.querySelectorAll('#statusToggle button').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active'); status = btn.dataset.v; load();
-    });
-    load();
-  },
-
-  async 'buy-orders'(){
-    const el = document.getElementById('pageContent');
-    el.innerHTML = `
-      <div class="panel"><div class="panelBody flush">
-        <table><thead><tr><th>User</th><th>INR paid</th><th>USDT to credit</th><th>Method</th><th>Reference</th><th>Status</th><th>Actions</th></tr></thead>
-        <tbody id="buyBody"></tbody></table>
-      </div></div>
-    `;
-    async function load(){
-      const body = document.getElementById('buyBody');
-      body.innerHTML = tableSkeleton(7, 5);
-      const { rows } = await AdminAPI.listBuyOrders({});
-      if(!rows.length){ body.innerHTML = `<tr><td colspan="7">${emptyState('No buy orders to show', 'Connect AdminAPI.listBuyOrders() to see live orders here.')}</td></tr>`; return; }
-      body.innerHTML = rows.map(o => `
-        <tr><td>${o.user_name}</td><td>₹${o.inr_amount}</td><td>${o.usdt_amount}</td><td>${o.payment_method}</td><td class="mono">${o.payment_ref || '—'}</td><td>${statusPill(o.status)}</td>
-        <td>${o.status==='pending' ? `<button class="btnMini approve" onclick="verifyBuy('${o.id}')">Verify & credit</button><button class="btnMini reject" onclick="rejectBuy('${o.id}')">Reject</button>` : '—'}</td></tr>
-      `).join('');
-    }
-    window.verifyBuy = async (id) => { await AdminAPI.verifyBuyOrder(id); showToast('Payment verified, USDT credited.'); load(); };
-    window.rejectBuy = async (id) => { await AdminAPI.rejectBuyOrder(id); showToast('Buy order rejected.'); load(); };
-    load();
-  },
-
-  async 'sell-orders'(){
-    const el = document.getElementById('pageContent');
-    el.innerHTML = `
-      <div class="panel"><div class="panelBody flush">
-        <table><thead><tr><th>User</th><th>USDT sent</th><th>INR to pay</th><th>Bank / UPI</th><th>Status</th><th>Actions</th></tr></thead>
-        <tbody id="sellBody"></tbody></table>
-      </div></div>
-    `;
-    async function load(){
-      const body = document.getElementById('sellBody');
-      body.innerHTML = tableSkeleton(6, 5);
-      const { rows } = await AdminAPI.listSellOrders({});
-      if(!rows.length){ body.innerHTML = `<tr><td colspan="6">${emptyState('No sell orders to show', 'Connect AdminAPI.listSellOrders() to see live orders here.')}</td></tr>`; return; }
-      body.innerHTML = rows.map(o => `
-        <tr><td>${o.user_name}</td><td>${o.usdt_amount}</td><td>₹${o.inr_amount}</td><td class="mono">${o.payout_details}</td><td>${statusPill(o.status)}</td>
-        <td>${o.status==='pending' ? `<button class="btnMini approve" onclick="openPay('${o.id}')">Mark paid</button><button class="btnMini reject" onclick="rejectSell('${o.id}')">Reject</button>` : '—'}</td></tr>
-      `).join('');
-    }
-    window.openPay = (id) => {
-      openModal(`
-        <h3>Confirm payout</h3>
-        <div class="field"><label>UTR / reference number</label><input id="pay_utr" type="text" placeholder="e.g. 3298471029384"></div>
-        <div class="btnRow"><button class="btnPrimary" onclick="markPaid('${id}')">Mark as paid</button><button class="btnGhost" onclick="closeModal()">Cancel</button></div>
-      `);
-    };
-    window.markPaid = async (id) => {
-      const utr = document.getElementById('pay_utr').value.trim();
-      if(!utr){ showToast('Enter the UTR.', true); return; }
-      await AdminAPI.markSellPaid(id, utr); closeModal(); showToast('Sell order marked as paid.'); load();
-    };
-    window.rejectSell = async (id) => { await AdminAPI.rejectSellOrder(id); showToast('Sell order rejected, USDT refunded.'); load(); };
-    load();
-  },
-
-  async rates(){
-    const el = document.getElementById('pageContent');
-    el.innerHTML = `
-      <div class="toggleRow" id="modeToggle"><button class="active" data-v="live">Live / auto</button><button data-v="manual">Manual override</button></div>
-      <div class="cardGrid" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr));">
-        <div class="card"><div class="clabel">Reference rate</div><div class="cval" id="refRate">—</div><div class="csub">external feed</div></div>
-        <div class="card"><div class="clabel">Buy rate (live)</div><div class="cval" style="color:var(--gold);" id="buyRateLive">—</div></div>
-        <div class="card"><div class="clabel">Sell rate (live)</div><div class="cval" style="color:var(--tether);" id="sellRateLive">—</div></div>
-      </div>
-      <div class="panel"><div class="panelHead"><h3>Live mode — margin settings</h3></div>
-        <div class="panelBody">
-          <div class="formGrid">
-            <div class="field"><label>Buy margin above reference (%)</label><input id="margin_buy" type="number" step="0.1"></div>
-            <div class="field"><label>Sell margin below reference (%)</label><input id="margin_sell" type="number" step="0.1"></div>
-          </div>
-          <div class="btnRow"><button class="btnGhost" id="saveMargins">Save margins</button></div>
+/* ---------- CUSTOMER: sell ---------- */
+function renderSell(){
+  const r = computeRates();
+  const u = currentUser;
+  document.getElementById('pageContent').innerHTML = `
+    <div class="rateDisplay"><div class="rlabel">Current sell rate</div><div class="rval" style="color:var(--tether);">₹${fmt(r.sell)} / USDT</div></div>
+    <div class="panel"><div class="panelBody">
+      <div class="formGrid single">
+        <div class="field"><label>USDT amount to sell (balance: ${fmt(u.usdt_balance,2)})</label><input id="sell_usdt" type="number" placeholder="0.00" oninput="updateSellCalc()"></div>
+        <div class="field"><label>Payout method</label>
+          <select id="sell_method" onchange="updateSellCalc()"><option value="UPI">UPI</option><option value="BANK">Bank transfer</option></select>
         </div>
       </div>
-      <div class="panel"><div class="panelHead"><h3>Manual mode — fixed rates</h3></div>
-        <div class="panelBody">
-          <div class="formGrid">
-            <div class="field"><label>Manual buy rate (₹/USDT)</label><input id="manual_buy" type="number" step="0.01"></div>
-            <div class="field"><label>Manual sell rate (₹/USDT)</label><input id="manual_sell" type="number" step="0.01"></div>
-          </div>
-          <div class="btnRow"><button class="btnGhost" id="saveManual">Save manual rates</button></div>
-        </div>
-      </div>
-    `;
-    let mode = 'live';
-    function updateFieldStates(){
-      document.getElementById('margin_buy').disabled = mode !== 'live';
-      document.getElementById('margin_sell').disabled = mode !== 'live';
-      document.getElementById('manual_buy').disabled = mode !== 'manual';
-      document.getElementById('manual_sell').disabled = mode !== 'manual';
-    }
-    document.getElementById('modeToggle').addEventListener('click', async (e) => {
-      const btn = e.target.closest('button'); if(!btn) return;
-      mode = btn.dataset.v;
-      document.querySelectorAll('#modeToggle button').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      await AdminAPI.setRateMode(mode);
-      updateFieldStates();
-    });
-    document.getElementById('saveMargins').onclick = async () => {
-      const buy = parseFloat(document.getElementById('margin_buy').value) || 0;
-      const sell = parseFloat(document.getElementById('margin_sell').value) || 0;
-      await AdminAPI.saveMargins(buy, sell); showToast('Margins saved.');
-    };
-    document.getElementById('saveManual').onclick = async () => {
-      const buy = parseFloat(document.getElementById('manual_buy').value) || 0;
-      const sell = parseFloat(document.getElementById('manual_sell').value) || 0;
-      await AdminAPI.saveManualRates(buy, sell); showToast('Manual rates saved.');
-    };
-    const s = await AdminAPI.getRateSettings();
-    if(s){
-      document.getElementById('refRate').textContent = '₹' + s.live_rate;
-      document.getElementById('buyRateLive').textContent = '₹' + s.buy;
-      document.getElementById('sellRateLive').textContent = '₹' + s.sell;
-      document.getElementById('margin_buy').value = s.margin.buy;
-      document.getElementById('margin_sell').value = s.margin.sell;
-      document.getElementById('manual_buy').value = s.manual_rate.buy;
-      document.getElementById('manual_sell').value = s.manual_rate.sell;
-      mode = s.rate_mode;
-    }
-    updateFieldStates();
-  },
+      <div id="sellPayoutFields"></div>
+      <div class="calcOut"><div class="clab">You receive</div><div class="cnum" id="sellCalcOut">₹0</div></div>
+      <button class="btnPrimary" style="max-width:220px;margin-top:16px;" onclick="submitSell()">Submit sell order</button>
+    </div></div>
+  `;
+  updateSellCalc();
+}
+function updateSellCalc(){
+  const r = computeRates();
+  const usdt = parseFloat(document.getElementById('sell_usdt').value) || 0;
+  document.getElementById('sellCalcOut').textContent = '₹' + fmt(usdt * r.sell, 0);
+  const method = document.getElementById('sell_method').value;
+  document.getElementById('sellPayoutFields').innerHTML = method==='UPI'
+    ? `<div class="field"><label>UPI ID</label><input id="sell_upi" placeholder="yourname@bank"></div>`
+    : `<div class="formGrid">
+         <div class="field"><label>Account holder name</label><input id="sell_accname" placeholder="Full name"></div>
+         <div class="field"><label>Account number</label><input id="sell_accno" placeholder="0000000000"></div>
+         <div class="field"><label>IFSC code</label><input id="sell_ifsc" placeholder="ABCD0123456"></div>
+       </div>`;
+}
+async function submitSell(){
+  const u = currentUser;
+  const usdt = parseFloat(document.getElementById('sell_usdt').value);
+  const method = document.getElementById('sell_method').value;
+  if(!usdt || usdt<=0){ showToast('Enter an amount.', true); return; }
+  if(usdt > u.usdt_balance){ showToast('Insufficient USDT balance.', true); return; }
+  let payout_details = {};
+  if(method==='UPI'){
+    const upi = document.getElementById('sell_upi').value.trim();
+    if(!upi){ showToast('Enter your UPI ID.', true); return; }
+    payout_details = {upi_id:upi};
+  } else {
+    const name = document.getElementById('sell_accname').value.trim();
+    const accno = document.getElementById('sell_accno').value.trim();
+    const ifsc = document.getElementById('sell_ifsc').value.trim();
+    if(!name||!accno||!ifsc){ showToast('Fill in all bank details.', true); return; }
+    payout_details = {name, account_no:accno, ifsc};
+  }
+  const { error } = await sb.rpc('request_sell_order', { p_usdt_amount: usdt, p_payout_method: method, p_payout_details: payout_details });
+  if(error){ showToast(error.message, true); return; }
+  showToast('Sell order placed. USDT locked pending payout.');
+  await refreshAll();
+  renderPage();
+}
 
-  async settings(){
-    const el = document.getElementById('pageContent');
-    el.innerHTML = `
-      <div class="panel"><div class="panelHead"><div><h3>Deposit addresses</h3><div class="sub">Shown to every user, per network</div></div></div>
-        <div class="panelBody" id="addressesBody"></div>
-      </div>
-      <div class="panel"><div class="panelHead"><h3>Limits & fees</h3></div>
-        <div class="panelBody">
-          <div class="formGrid">
-            <div class="field"><label>Minimum deposit (USDT)</label><input id="set_mindep" type="number"></div>
-            <div class="field"><label>Minimum withdrawal (USDT)</label><input id="set_minwd" type="number"></div>
-            <div class="field"><label>Withdrawal fee (%)</label><input id="set_fee" type="number" step="0.1"></div>
-          </div>
-          <div class="btnRow"><button class="btnGhost" id="saveSettingsBtn">Save settings</button></div>
-        </div>
-      </div>
-      <div class="warnBox"><b>Compliance reminder:</b> confirm FIU-IND (VASP) registration and a working KYC provider are in place before processing real customer funds. This scaffold does not perform KYC or compliance checks.</div>
-    `;
-    document.getElementById('saveSettingsBtn').onclick = async () => {
-      const payload = {
-        min_deposit: parseFloat(document.getElementById('set_mindep').value) || 0,
-        min_withdrawal: parseFloat(document.getElementById('set_minwd').value) || 0,
-        withdrawal_fee_pct: parseFloat(document.getElementById('set_fee').value) || 0,
-      };
-      await AdminAPI.saveSettings(payload); showToast('Settings saved.');
-    };
-    const s = await AdminAPI.getSettings();
-    const addrBody = document.getElementById('addressesBody');
-    if(!s){ addrBody.innerHTML = emptyState('No settings loaded', 'Connect AdminAPI.getSettings() to manage deposit addresses here.'); return; }
-    document.getElementById('set_mindep').value = s.min_deposit;
-    document.getElementById('set_minwd').value = s.min_withdrawal;
-    document.getElementById('set_fee').value = s.withdrawal_fee_pct;
-    addrBody.innerHTML = s.networks.map(n => `<div class="field"><label>${n.code} — ${n.name}</label><input type="text" value="${n.addr}" data-network="${n.code}"></div>`).join('');
-  },
+/* ---------- CUSTOMER: history ---------- */
+function renderHistory(){
+  const u = currentUser;
+  const rows = [
+    ...state.deposits.filter(x=>x.user_id===u.id).map(x=>({type:'Deposit',detail:`${x.network} · ${x.tx_hash}`,amount:`+${fmt(x.amount,2)} USDT`,status:x.status,time:x.created_at})),
+    ...state.withdrawals.filter(x=>x.user_id===u.id).map(x=>({type:'Withdrawal',detail:`${x.network} · ${x.to_address}`,amount:`-${fmt(x.amount,2)} USDT`,status:x.status,time:x.created_at})),
+    ...state.sellOrders.filter(x=>x.user_id===u.id).map(x=>({type:'Sell',detail:x.payout_method,amount:`${fmt(x.usdt_amount,2)} USDT → ₹${fmt(x.inr_amount,0)}`,status:x.status,time:x.created_at})),
+    ...state.buyOrders.filter(x=>x.user_id===u.id).map(x=>({type:'Buy',detail:x.payment_method,amount:`₹${fmt(x.inr_amount,0)} → ${fmt(x.usdt_amount,4)} USDT`,status:x.status,time:x.created_at})),
+  ].reverse();
+  document.getElementById('pageContent').innerHTML = `
+    <div class="panel"><div class="panelBody" style="padding:0;">
+      <table><thead><tr><th>Type</th><th>Detail</th><th>Amount</th><th>Status</th><th>Time</th></tr></thead>
+      <tbody>${rows.length ? rows.map(r=>`<tr><td>${r.type}</td><td class="mono">${r.detail}</td><td>${r.amount}</td><td>${statusPill(r.status)}</td><td class="mono">${r.time}</td></tr>`).join('') : `<tr><td colspan="5"><div class="emptyRow">No transactions yet.</div></td></tr>`}</tbody></table>
+    </div></div>
+  `;
+}
 
-  async 'audit-log'(){
-    const el = document.getElementById('pageContent');
-    el.innerHTML = `<div class="panel"><div class="panelBody flush">
-      <table><thead><tr><th>Admin</th><th>Action</th><th>Time</th></tr></thead><tbody id="auditBody"></tbody></table>
-    </div></div>`;
-    const body = document.getElementById('auditBody');
-    body.innerHTML = tableSkeleton(3, 6);
-    const { rows } = await AdminAPI.listAuditLog({});
-    if(!rows.length){ body.innerHTML = `<tr><td colspan="3">${emptyState('No actions logged yet', 'Connect AdminAPI.listAuditLog() to see the admin activity trail here.')}</td></tr>`; return; }
-    body.innerHTML = rows.map(l => `<tr><td>${l.admin}</td><td>${l.action}</td><td class="mono">${l.time}</td></tr>`).join('');
-  },
-};
 </script>
 </body>
 </html>
